@@ -332,7 +332,7 @@ module DhcpsApi
 
     def as_ruby_struct
       0.upto(self[:num_elements]-1).inject([]) do |all, offset|
-        all << DHCP_OPTION_DATA_ELEMENT.new(self[:elements][offset]).as_ruby_struct
+        all << DHCP_OPTION_DATA_ELEMENT.new(self[:elements] + DHCP_OPTION_DATA_ELEMENT.size*offset).as_ruby_struct
       end
     end
   end

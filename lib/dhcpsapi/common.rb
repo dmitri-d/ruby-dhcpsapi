@@ -13,6 +13,14 @@ module DhcpsApi
       511
     end
 
+    def ip_to_uint32(ip_address)
+      ip_address.strip.split(".").inject(0) do |all_octets, current_octet|
+        all_octets = all_octets << 8
+        all_octets |= current_octet.to_i
+        all_octets
+      end
+    end
+
     def uint32_to_ip(encoded_ip)
       (0..3).inject([]) {|all_octets, current_octet| all_octets << ((encoded_ip >> 8*current_octet) & 0xFF)}.reverse.join(".")
     end
@@ -63,7 +71,7 @@ VOID DHCP_API_FUNCTION DhcpRpcFreeMemory(
 
   module CommonMethods
     def free_memory(a_struct)
-      DHCPS.DhcpRpcFreeMemory(a_struct.pointer)
+      DhcpsApi.DhcpRpcFreeMemory(a_struct.pointer)
     end
 
     def retrieve_items(method_to_call, *args)

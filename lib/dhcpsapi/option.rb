@@ -41,7 +41,7 @@ typedef struct _DHCP_OPTION_ARRAY {
 
     def as_ruby_struct
       0.upto(self[:num_elements]-1).inject([]) do |all, offset|
-        all << DHCPS::Win32::DHCP_OPTION.new(self[:options] + offset*DHCP_OPTION.size).as_ruby_struct
+        all << DHCP_OPTION.new(self[:options] + offset*DHCP_OPTION.size).as_ruby_struct
       end
     end
   end
@@ -100,15 +100,15 @@ typedef struct _DHCP_OPTION_ARRAY {
     include CommonMethods
 
     def create_option(option_id, option_name, option_comment, option_type, is_array, vendor_name = nil, *default_values)
-      is_vendor = vendor_name.nil? ? 0 : DhspsApi::DHCP_FLAGS_OPTION_IS_VENDOR
-      option_info = DhspsApi::DHCP_OPTION.new
+      is_vendor = vendor_name.nil? ? 0 : DhcpsApi::DHCP_FLAGS_OPTION_IS_VENDOR
+      option_info = DhcpsApi::DHCP_OPTION.new
       option_info[:option_id] = option_id
       option_info[:option_name] = FFI::MemoryPointer.from_string(to_wchar_string(option_name))
       option_info[:option_comment] = FFI::MemoryPointer.from_string(to_wchar_string(option_comment))
-      option_info[:option_type] = is_array ? DhspsApi::DHCP_OPTION_TYPE::DhcpArrayTypeOption : DhspsApi::DHCP_OPTION_TYPE::DhcpUnaryElementTypeOption
+      option_info[:option_type] = is_array ? DhcpsApi::DHCP_OPTION_TYPE::DhcpArrayTypeOption : DhcpsApi::DHCP_OPTION_TYPE::DhcpUnaryElementTypeOption
       option_info[:default_value].from_array(option_type, default_values)
 
-      error = DhspsApi.DhcpCreateOptionV5(to_wchar_string(server_ip_address),
+      error = DhcpsApi.DhcpCreateOptionV5(to_wchar_string(server_ip_address),
                                               is_vendor,
                                               option_id,
                                               nil,
@@ -120,10 +120,10 @@ typedef struct _DHCP_OPTION_ARRAY {
     end
 
     def get_option(option_id, vendor_name = nil)
-      is_vendor = vendor_name.nil? ? 0 : DhspsApi::DHCP_FLAGS_OPTION_IS_VENDOR
+      is_vendor = vendor_name.nil? ? 0 : DhcpsApi::DHCP_FLAGS_OPTION_IS_VENDOR
       option_info_ptr_ptr = FFI::MemoryPointer.new(:pointer)
 
-      error = DhspsApi::DhcpGetOptionInfoV5(to_wchar_string(server_ip_address),
+      error = DhcpsApi::DhcpGetOptionInfoV5(to_wchar_string(server_ip_address),
                                                 is_vendor,
                                                 option_id,
                                                 nil,
@@ -131,12 +131,12 @@ typedef struct _DHCP_OPTION_ARRAY {
                                                 option_info_ptr_ptr)
       if is_error?(error)
         unless (option_info_ptr_ptr.null? || (to_free = option_info_ptr_ptr.read_pointer).null?)
-          free_memory(DhspsApi::DHCP_OPTION.new(to_free))
+          free_memory(DhcpsApi::DHCP_OPTION.new(to_free))
         end
         raise DhcpsApi::Error.new("Error retrieving option information.", error)
       end
 
-      option_info = DhspsApi::DHCP_OPTION.new(option_info_ptr_ptr.read_pointer)
+      option_info = DhcpsApi::DHCP_OPTION.new(option_info_ptr_ptr.read_pointer)
       to_return = option_info.as_ruby_struct
       free_memory(option_info)
 
@@ -144,8 +144,8 @@ typedef struct _DHCP_OPTION_ARRAY {
     end
 
     def delete_option(option_id, vendor_name = nil)
-      error = DhspsApi::DhcpRemoveOptionV5(to_wchar_string(server_ip_address),
-                                               vendor_name.nil? ? 0 : DhspsApi::DHCP_FLAGS_OPTION_IS_VENDOR,
+      error = DhcpsApi::DhcpRemoveOptionV5(to_wchar_string(server_ip_address),
+                                               vendor_name.nil? ? 0 : DhcpsApi::DHCP_FLAGS_OPTION_IS_VENDOR,
                                                option_id,
                                                nil,
                                                vendor_name.nil? ? nil : FFI::MemoryPointer.from_string(to_wchar_string(vendor_name)))
@@ -162,9 +162,9 @@ typedef struct _DHCP_OPTION_ARRAY {
       options_ptr_ptr = FFI::MemoryPointer.new(:pointer)
       options_read_ptr = FFI::MemoryPointer.new(:uint32).put_uint32(0, 0)
       options_total_ptr = FFI::MemoryPointer.new(:uint32).put_uint32(0, 0)
-      is_vendor = vendor_name.nil? ? 0 : DhspsApi::DHCP_FLAGS_OPTION_IS_VENDOR
+      is_vendor = vendor_name.nil? ? 0 : DhcpsApi::DHCP_FLAGS_OPTION_IS_VENDOR
 
-      error = DhspsApi.DhcpEnumOptionsV5(to_wchar_string(server_ip_address),
+      error = DhcpsApi.DhcpEnumOptionsV5(to_wchar_string(server_ip_address),
                                              is_vendor,
                                              class_name.nil? ? nil : FFI::MemoryPointer.from_string(to_wchar_string(class_name)) ,
                                              vendor_name.nil? ? nil : FFI::MemoryPointer.from_string(to_wchar_string(vendor_name)),
@@ -176,12 +176,12 @@ typedef struct _DHCP_OPTION_ARRAY {
       return empty_response if error == 259
       if is_error?(error)
         unless (options_ptr_ptr.null? || (to_free = options_ptr_ptr.read_pointer).null?)
-          free_memory(DhspsApi::DHCP_OPTION_ARRAY.new(to_free))
+          free_memory(DhcpsApi::DHCP_OPTION_ARRAY.new(to_free))
         end
         raise DhcpsApi::Error.new("Error retrieving options.", error)
       end
 
-      options_array = DhspsApi::DHCP_OPTION_ARRAY.new(options_ptr_ptr.read_pointer)
+      options_array = DhcpsApi::DHCP_OPTION_ARRAY.new(options_ptr_ptr.read_pointer)
       to_return = options_array.as_ruby_struct
 
       free_memory(options_array)

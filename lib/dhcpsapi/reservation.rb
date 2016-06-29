@@ -1,4 +1,4 @@
-module DhcpsApiApi
+module DhcpsApi
 =begin
   typedef struct _DHCP_IP_RESERVATION_INFO {
     DHCP_IP_ADDRESS ReservedIpAddress;
@@ -9,7 +9,7 @@ module DhcpsApiApi
     BYTE            fOptionsPresent;
   } DHCP_IP_RESERVATION_INFO, *LPDHCP_IP_RESERVATION_INFO;
 =end
-  class DHCP_IP_RESERVATION_INFO < DhcpsApi_Struct
+  class DHCP_IP_RESERVATION_INFO < DHCPS_Struct
     layout :reserved_ip_address, :uint32,
            :reserved_for_client, DHCP_CLIENT_UID,
            :reserved_client_name, :pointer,
@@ -28,7 +28,7 @@ module DhcpsApiApi
     LPDHCP_IP_RESERVATION_INFO *Elements;
   } DHCP_RESERVATION_INFO_ARRAY, *LPDHCP_RESERVATION_INFO_ARRAY;
 =end
-  class DHCP_RESERVATION_INFO_ARRAY < DhcpsApi_Struct
+  class DHCP_RESERVATION_INFO_ARRAY < DHCPS_Struct
     layout :num_elements, :uint32,
            :elements, :pointer
   end
@@ -83,7 +83,7 @@ module DhcpsApiApi
       error = DhcpsApi.DhcpAddSubnetElementV4(to_wchar_string(server_ip_address), ip_to_uint32(subnet_address), subnet_element.pointer)
       raise DhcpsApi::Error.new("Error creating reservation.", error) if error != 0
 
-      modify_client(server_ip_address, reservation_ip, reservation_subnet_mask, reservation_mac, reservation_name, reservation_comment, 0, DhcpsApi::ClientType::CLIENT_TYPE_NONE)
+      modify_client(reservation_ip, reservation_subnet_mask, reservation_mac, reservation_name, reservation_comment, 0, DhcpsApi::ClientType::CLIENT_TYPE_NONE)
 
       subnet_element.as_ruby_struct
     end

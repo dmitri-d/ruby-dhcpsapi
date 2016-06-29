@@ -1,5 +1,4 @@
-module DhcpsApiApi
-
+module DhcpsApi
   class DHCP_SUBNET_STATE
     DhcpsApiubnetEnabled = 0
     DhcpsApiubnetDisabled = 1
@@ -96,7 +95,7 @@ module DhcpsApiApi
     end
 
     def enum_subnets
-      items, _ = retrieve_items(:dhcp_enum_subnets, server_ip_address, 1024, 0)
+      items, _ = retrieve_items(:dhcp_enum_subnets, 1024, 0)
       items
     end
 
@@ -125,7 +124,7 @@ module DhcpsApiApi
       elements_read_ptr = FFI::MemoryPointer.new(:uint32).put_uint32(0, 0)
       elements_total_ptr = FFI::MemoryPointer.new(:uint32).put_uint32(0, 0)
 
-      error = DhcpsApi::Win32.DhcpEnumSubnets(to_wchar_string(server_ip_address), resume_handle_ptr, preferred_maximium, dhcp_ip_array_ptr_ptr, elements_read_ptr, elements_total_ptr)
+      error = DhcpsApi.DhcpEnumSubnets(to_wchar_string(server_ip_address), resume_handle_ptr, preferred_maximium, dhcp_ip_array_ptr_ptr, elements_read_ptr, elements_total_ptr)
       return empty_response if error == 259
       if is_error?(error)
         unless (dhcp_ip_array_ptr_ptr.null? || (to_free = dhcp_ip_array_ptr_ptr.read_pointer).null?)

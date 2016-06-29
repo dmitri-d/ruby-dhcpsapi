@@ -7,6 +7,6 @@ task default: :test
 
 Rake::TestTask.new do |task|
   task.libs.unshift(File.expand_path('../integration_test', __FILE__))
-  task.test_files = FileList['integration_test/**/test*.rb']
+  task.test_files = FileList['integration_test/**/*_test.rb']
 end
 

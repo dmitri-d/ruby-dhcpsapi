@@ -1,5 +1,6 @@
-module DhspsApi
+module DhcpsApi
   class Server
+    include RubyStructAttrHelpers
     include CommonMethods
     include Class
     include Client

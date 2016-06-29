@@ -1,5 +1,29 @@
 module DhcpsApi
 =begin
+  typedef struct _DHCP_RESERVED_SCOPE {
+    DHCP_IP_ADDRESS ReservedIpAddress;
+    DHCP_IP_ADDRESS ReservedIpSubnetAddress;
+  } DHCP_RESERVED_SCOPE, *LPDHCP_RESERVED_SCOPE;
+=end
+  class DHCP_RESERVED_SCOPE < DHCPS_Struct
+    layout :reserved_ip_address, :uint32,
+           :reserved_ip_subnet_address, :uint32
+  end
+
+  class DHCP_OPTION_SCOPE_TYPE
+    # The DHCP options correspond to the default scope.
+    DhcpDefaultOptions = 0
+    # The DHCP options correspond to the global scope.
+    DhcpGlobalOptions = 1
+    # The DHCP options correspond to a specific subnet scope.
+    DhcpSubnetOptions = 2
+    # The DHCP options correspond to a reserved IP address.
+    DhcpReservedOptions = 3
+    # The DHCP options correspond to a multicast scope.
+    DhcpMScopeOptions = 4
+  end
+
+=begin
   typedef struct _DHCP_OPTION_SCOPE_INFO {
     DHCP_OPTION_SCOPE_TYPE ScopeType;
     union {
@@ -26,28 +50,29 @@ module DhcpsApi
     def self.build_for_subnet_scope(subnet_ip_address)
       to_return = new
       to_return[:scope_type] = DHCP_OPTION_SCOPE_TYPE::DhcpSubnetOptions
-      to_return[:scope_info][:subnet_scope_info] = ip_to_uint32(subnet_ip_address)
+      to_return[:scope_info][:subnet_scope_info] = to_return.ip_to_uint32(subnet_ip_address)
       to_return
     end
 
     def self.build_for_reserved_scope(reserved_ip_address, subnet_ip_address)
       to_return = new
       to_return[:scope_type] = DHCP_OPTION_SCOPE_TYPE::DhcpReservedOptions
-      to_return[:scope_info][:reserved_ip_address] = ip_to_uint32(reserved_ip_address)
-      to_return[:scope_info][:reserved_ip_subnet_address] = ip_to_uint32(subnet_ip_address)
+      to_return[:scope_info][:reserved_scope_info][:reserved_ip_address] = to_return.ip_to_uint32(reserved_ip_address)
+      to_return[:scope_info][:reserved_scope_info][:reserved_ip_subnet_address] = to_return.ip_to_uint32(subnet_ip_address)
       to_return
     end
 
     def self.build_for_multicast_scope(multicast_scope_name)
       to_return = new
       to_return[:scope_type] = DHCP_OPTION_SCOPE_TYPE::DhcpMScopeOptions
-      to_return[:scope_info][:m_scope_info] = to_wchar_string(multicast_scope_name)
+      to_return[:scope_info][:m_scope_info] = FFI::MemoryPointer.from_string(to_return.to_wchar_string(multicast_scope_name))
       to_return
     end
 
     def self.build_for_default_scope
       to_return = new
       to_return[:scope_type] = DHCP_OPTION_SCOPE_TYPE::DhcpDefaultOptions
+      to_return[:scope_info][:default_scope_info] = DHCP_OPTION_ARRAY.new.pointer
       to_return
     end
 
@@ -140,30 +165,171 @@ typedef struct _DHCP_OPTION_VALUE {
   attach_function :DhcpSetOptionValueV5, [:pointer, :uint32, :uint32, :pointer, :pointer, :pointer, :pointer], :uint32
 
   module OptionValue
-    def dhcp_set_option_value_v5(option_id, class_name, vendor_name, scope_info, option_type, *values)
+    # see DHCP_OPTION_DATA_TYPE for option_type values
+    def set_subnet_option_value(option_id, subnet_ip_address, option_type, values, vendor_name = nil)
+      dhcp_set_option_value_v5(
+          option_id,
+          vendor_name,
+          DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_subnet_scope(subnet_ip_address),
+          option_type,
+          values.is_a?(Array) ? values : [values]
+      )
+    end
+
+    # see DHCP_OPTION_DATA_TYPE for option_type values
+    def set_reserved_option_value(option_id, reserved_ip_address, subnet_ip_address, option_type, values, vendor_name = nil)
+      dhcp_set_option_value_v5(
+          option_id,
+          vendor_name,
+          DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_reserved_scope(reserved_ip_address, subnet_ip_address),
+          option_type,
+          values.is_a?(Array) ? values : [values]
+      )
+    end
+
+    # see DHCP_OPTION_DATA_TYPE for option_type values
+    def set_multicast_option_value(option_id, multicast_scope_name, option_type, values, vendor_name = nil)
+      dhcp_set_option_value_v5(
+          option_id,
+          vendor_name,
+          DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_multicast_scope(multicast_scope_name),
+          option_type,
+          values.is_a?(Array) ? values : [values]
+      )
+    end
+
+    # see DHCP_OPTION_DATA_TYPE for option_type values
+    def set_option_value(option_id, option_type, values, vendor_name = nil)
+      dhcp_set_option_value_v5(
+          option_id,
+          vendor_name,
+          DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_default_scope,
+          option_type,
+          values.is_a?(Array) ? values : [values]
+      )
+    end
+
+    def get_subnet_option_value(option_id, subnet_ip_address, vendor_name = nil)
+      dhcp_get_option_value_v5(
+          option_id,
+          vendor_name,
+          DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_subnet_scope(subnet_ip_address)
+      )
+    end
+
+    def get_reserved_option_value(option_id, reserved_ip_address, subnet_ip_address, vendor_name = nil)
+      dhcp_get_option_value_v5(
+          option_id,
+          vendor_name,
+          DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_reserved_scope(reserved_ip_address, subnet_ip_address)
+      )
+    end
+
+    def get_multicast_option_value(option_id, multicast_scope_name, vendor_name = nil)
+      dhcp_get_option_value_v5(
+          option_id,
+          vendor_name,
+          DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_multicast_scope(multicast_scope_name)
+      )
+    end
+
+    def get_option_value(option_id, vendor_name = nil)
+      dhcp_get_option_value_v5(
+          option_id,
+          vendor_name,
+          DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_default_scope
+      )
+    end
+
+    def remove_subnet_option_value(option_id, subnet_ip_address, vendor_name = nil)
+      dhcp_remove_option_value_v5(
+          option_id,
+          vendor_name,
+          DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_subnet_scope(subnet_ip_address)
+      )
+    end
+
+    def remove_reserved_option_value(option_id, reserved_ip_address, subnet_ip_address, vendor_name = nil)
+      dhcp_remove_option_value_v5(
+          option_id,
+          vendor_name,
+          DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_reserved_scope(reserved_ip_address, subnet_ip_address)
+      )
+    end
+
+    def remove_multicast_option_value(option_id, multicast_scope_name, vendor_name = nil)
+      dhcp_remove_option_value_v5(
+          option_id,
+          vendor_name,
+          DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_multicast_scope(multicast_scope_name)
+      )
+    end
+
+    def remove_option_value(option_id, vendor_name = nil)
+      dhcp_remove_option_value_v5(
+          option_id,
+          vendor_name,
+          DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_default_scope
+      )
+    end
+
+    def list_subnet_option_values(subnet_ip_address, vendor_name = nil)
+      items, _ = retrieve_items(:dhcp_enum_option_values_v5,
+                                vendor_name,
+                                DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_subnet_scope(subnet_ip_address),
+                                1024, 0)
+      items
+    end
+
+    def list_reserved_option_values(reserved_ip_address, subnet_ip_address, vendor_name = nil)
+      items, _ = retrieve_items(:dhcp_enum_option_values_v5,
+                                vendor_name,
+                                DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_reserved_scope(reserved_ip_address, subnet_ip_address),
+                                1024, 0)
+      items
+    end
+
+    def list_multicast_option_values(multicast_scope_name, vendor_name = nil)
+      items, _ = retrieve_items(:dhcp_enum_option_values_v5,
+                                vendor_name,
+                                DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_multicast_scope(multicast_scope_name),
+                                1024, 0)
+      items
+    end
+
+    def list_values(vendor_name = nil)
+      items, _ = retrieve_items(:dhcp_enum_option_values_v5,
+                                vendor_name,
+                                DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_default_scope,
+                                1024, 0)
+      items
+    end
+
+    # see DHCP_OPTION_DATA_TYPE for option_type values
+    def dhcp_set_option_value_v5(option_id, vendor_name, scope_info, option_type, values)
       is_vendor = vendor_name.nil? ? 0 : DhcpsApi::DHCP_FLAGS_OPTION_IS_VENDOR
       option_data = DhcpsApi::DHCP_OPTION_DATA.from_array(option_type, values)
-      error = DhcpsApi.DhcpGetOptionValueV5(to_wchar_string(server_ip_address),
-                                                is_vendor,
-                                                option_id,
-                                                class_name.nil? ? nil : FFI::MemoryPointer.from_string(to_wchar_string(class_name)) ,
-                                                vendor_name.nil? ? nil : FFI::MemoryPointer.from_string(to_wchar_string(vendor_name)),
-                                                scope_info.pointer,
-                                                option_data.pointer)
+      error = DhcpsApi.DhcpSetOptionValueV5(to_wchar_string(server_ip_address),
+                                            is_vendor,
+                                            option_id,
+                                            nil,
+                                            vendor_name.nil? ? nil : FFI::MemoryPointer.from_string(to_wchar_string(vendor_name)),
+                                            scope_info.pointer,
+                                            option_data.pointer)
       raise DhcpsApi::Error.new("Error setting option value.", error) if error != 0
     end
 
-    def dhcp_get_option_value_v5(option_id, class_name, vendor_name, scope_info)
+    def dhcp_get_option_value_v5(option_id, vendor_name, scope_info)
       is_vendor = vendor_name.nil? ? 0 : DhcpsApi::DHCP_FLAGS_OPTION_IS_VENDOR
       option_value_ptr_ptr = FFI::MemoryPointer.new(:pointer)
 
       error = DhcpsApi.DhcpGetOptionValueV5(to_wchar_string(server_ip_address),
-                                                is_vendor,
-                                                option_id,
-                                                class_name.nil? ? nil : FFI::MemoryPointer.from_string(to_wchar_string(class_name)) ,
-                                                vendor_name.nil? ? nil : FFI::MemoryPointer.from_string(to_wchar_string(vendor_name)),
-                                                scope_info,
-                                                option_value_ptr_ptr)
+                                            is_vendor,
+                                            option_id,
+                                            nil,
+                                            vendor_name.nil? ? nil : FFI::MemoryPointer.from_string(to_wchar_string(vendor_name)),
+                                            scope_info,
+                                            option_value_ptr_ptr)
 
       if is_error?(error)
         unless (option_value_ptr_ptr.null? || (to_free = option_value_ptr_ptr.read_pointer).null?)
@@ -179,56 +345,20 @@ typedef struct _DHCP_OPTION_VALUE {
       to_return
     end
 
-    def dhcp_remove_option_value_v5(option_id, class_name, vendor_name, scope_info)
+    def dhcp_remove_option_value_v5(option_id, vendor_name, scope_info)
       is_vendor = vendor_name.nil? ? 0 : DhcpsApi::DHCP_FLAGS_OPTION_IS_VENDOR
 
       error = DhcpsApi.DhcpRemoveOptionValueV5(to_wchar_string(server_ip_address),
-                                                   is_vendor,
-                                                   option_id,
-                                                   class_name.nil? ? nil : FFI::MemoryPointer.from_string(to_wchar_string(class_name)) ,
-                                                   vendor_name.nil? ? nil : FFI::MemoryPointer.from_string(to_wchar_string(vendor_name)),
-                                                   scope_info)
+                                               is_vendor,
+                                               option_id,
+                                               nil,
+                                               vendor_name.nil? ? nil : FFI::MemoryPointer.from_string(to_wchar_string(vendor_name)),
+                                               scope_info)
 
       raise DhcpsApi::Error.new("Error deleting option value.", error) if error != 0
     end
 
-    def list_subnet_option_values(subnet_ip_address, class_name, vendor_name)
-      items, _ = retrieve_items(:dhcp_enum_option_values_v5,
-                                class_name,
-                                vendor_name,
-                                DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_subnet_scope(subnet_ip_address),
-                                1024, 0)
-      items
-    end
-
-    def list_reserved_option_valuess(reserved_ip_address, subnet_ip_address, class_name, vendor_name)
-      items, _ = retrieve_items(:dhcp_enum_option_values_v5,
-                                class_name,
-                                vendor_name,
-                                DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_reserved_scope(reserved_ip_address, subnet_ip_address),
-                                1024, 0)
-      items
-    end
-
-    def list_multicast_option_valuess(multicast_scope_name, class_name, vendor_name)
-      items, _ = retrieve_items(:dhcp_enum_option_values_v5,
-                                class_name,
-                                vendor_name,
-                                DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_multicast_scope(multicast_scope_name),
-                                1024, 0)
-      items
-    end
-
-    def list_default_option_valuess(class_name, vendor_name)
-      items, _ = retrieve_items(:dhcp_enum_option_values_v5,
-                                class_name,
-                                vendor_name,
-                                DhcpsApi::DHCP_OPTION_SCOPE_INFO.build_for_default_scope,
-                                1024, 0)
-      items
-    end
-
-    def dhcp_enum_option_values_v5(class_name, vendor_name, scope_info, preferred_maximum, resume_handle)
+    def dhcp_enum_option_values_v5(vendor_name, scope_info, preferred_maximum, resume_handle)
       resume_handle_ptr = FFI::MemoryPointer.new(:uint32).put_uint32(0, resume_handle)
       option_values_ptr_ptr = FFI::MemoryPointer.new(:pointer)
       options_read_ptr = FFI::MemoryPointer.new(:uint32).put_uint32(0, 0)
@@ -237,7 +367,7 @@ typedef struct _DHCP_OPTION_VALUE {
 
       error = DhcpsApi.DhcpEnumOptionValuesV5(to_wchar_string(server_ip_address),
                                                   is_vendor,
-                                                  class_name.nil? ? nil : FFI::MemoryPointer.from_string(to_wchar_string(class_name)) ,
+                                                  nil,
                                                   vendor_name.nil? ? nil : FFI::MemoryPointer.from_string(to_wchar_string(vendor_name)),
                                                   scope_info.pointer,
                                                   resume_handle_ptr,
