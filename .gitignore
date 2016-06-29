@@ -1,0 +1,18 @@
+tags
+.idea/
+Gemfile.lock
+.rbenv*
+.rvmrc*
+.ruby-*
+.bundle
+pkg/
+test/tmp/*
+/tmp/
+*swp
+
+# Windows image file caches
+Thumbs.db
+# Folder config file
+Desktop.ini
+# Mac crap
+.DS_Store
