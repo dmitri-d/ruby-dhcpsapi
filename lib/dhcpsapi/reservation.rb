@@ -102,7 +102,7 @@ module DhcpsApi
           ip_to_uint32(subnet_address),
           to_delete.pointer,
           DhcpsApi::DHCP_FORCE_FLAG::DhcpNoForce)
-      raise DhcpsApi::Error.new("Error creating reservation.", error) if error != 0
+      raise DhcpsApi::Error.new("Error deleting reservation.", error) if error != 0
     end
 
     def dhcp_v4_enum_subnet_reservations(subnet_address, preferred_maximum, resume_handle)

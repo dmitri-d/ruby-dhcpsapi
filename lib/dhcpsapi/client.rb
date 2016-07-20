@@ -112,6 +112,15 @@ typedef struct _DHCP_CLIENT_INFO_PB_ARRAY {
   attach_function :DhcpSetClientInfoV4, [:pointer, :pointer], :uint32
 
 =begin
+  DWORD DHCP_API_FUNCTION DhcpGetClientInfoV4(
+    _In_  DHCP_CONST WCHAR            ServerIpAddress,
+    _In_  DHCP_CONST DHCP_SEARCH_INFO SearchInfo,
+    _Out_ LPDHCP_CLIENT_INFO_V4       *ClientInfo
+  );
+=end
+  attach_function :DhcpGetClientInfoV4, [:pointer, DHCP_SEARCH_INFO.by_value, :pointer], :uint32
+
+=begin
   DWORD DHCP_API_FUNCTION DhcpV4EnumSubnetClients(
     _In_opt_ DHCP_CONST WCHAR            *ServerIpAddress,
     _In_     DHCP_IP_ADDRESS             SubnetAddress,
@@ -178,6 +187,48 @@ typedef struct _DHCP_CLIENT_INFO_PB_ARRAY {
       raise DhcpsApi::Error.new("Error modifying client.", error) if error != 0
 
       to_modify.as_ruby_struct
+    end
+
+    def get_client(search_info, client_id)
+      client_info_ptr_ptr = FFI::MemoryPointer.new(:pointer)
+
+      error = DhcpsApi.DhcpGetClientInfoV4(to_wchar_string(server_ip_address), search_info.pointer, client_info_ptr_ptr)
+      if is_error?(error)
+        unless (client_info_ptr_ptr.null? || (to_free = client_info_ptr_ptr.read_pointer).null?)
+          free_memory(DhcpsApi::DHCP_CLIENT_INFO_V4.new(to_free))
+        end
+        raise DhcpsApi::Error.new("Error retrieving client '%s'." % [client_id], error)
+      end
+
+      client_info = DhcpsApi::DHCP_CLIENT_INFO_V4.new(client_info_ptr_ptr.read_pointer)
+      to_return = client_info.as_ruby_struct
+
+      free_memory(client_info)
+      to_return
+    end
+
+    def get_client_by_mac_address(subnet_address, client_mac_address)
+      search_info = DhcpsApi::DHCP_SEARCH_INFO.new
+      search_info[:search_type] = DhcpsApi::DHCP_SEARCH_INFO_TYPE::DhcpClientHardwareAddress
+      search_info[:search_info][:client_hardware_address].initialize_with_subnet_and_mac_addresses(subnet_address, client_mac_address)
+
+      get_client(search_info, client_mac_address)
+    end
+
+    def get_client_by_ip_address(client_ip_address)
+      search_info = DhcpsApi::DHCP_SEARCH_INFO.new
+      search_info[:search_type] = DhcpsApi::DHCP_SEARCH_INFO_TYPE::DhcpClientIpAddress
+      search_info[:search_info][:client_ip_address] = ip_to_uint32(client_ip_address)
+
+      get_client(search_info, client_ip_address)
+    end
+
+    def get_client_by_name(client_name)
+      search_info = DhcpsApi::DHCP_SEARCH_INFO.new
+      search_info[:search_type] = DhcpsApi::DHCP_SEARCH_INFO_TYPE::DhcpClientName
+      search_info[:search_info][:client_name] = FFI::MemoryPointer.from_string(to_wchar_string(client_name))
+
+      get_client(search_info, client_name)
     end
 
     def delete_client_by_mac_address(subnet_address, client_mac_address)

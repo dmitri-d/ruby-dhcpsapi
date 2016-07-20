@@ -23,6 +23,10 @@ class ClientTest < Test::Unit::TestCase
     assert clients.any? {|s| s[:client_name] == 'test_client_2'}
     assert clients.any? {|s| s[:client_name] == 'test_client_3'}
 
+    assert_equal 'test_client_1', @api.get_client_by_mac_address('192.168.242.0', '01:01:02:03:04:05')[:client_name]
+    assert_equal 'test_client_2', @api.get_client_by_ip_address('192.168.242.253')[:client_name]
+    assert_equal 'test_client_3', @api.get_client_by_name('test_client_3')[:client_name]
+
     @api.delete_client_by_ip_address('192.168.242.253')
     @api.delete_client_by_name('test_client_3')
     @api.delete_client_by_mac_address(@subnet_1, '01:01:02:03:04:05')

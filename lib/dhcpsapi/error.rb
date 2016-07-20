@@ -9,6 +9,8 @@ module DhcpsApi
 
     def self.description(code)
       case code
+        when 87
+          "One or more of the parameters were invalid." #ERROR_INVALID_PARAMETER
         when 20000
           "The DHCP server registry initialization parameters are incorrect." #ERROR_DHCP_REGISTRY_INIT_FAILED
         when 20001
@@ -149,6 +151,8 @@ module DhcpsApi
           "The specified IP address range conflicts with another IP range present in Active Directory." #ERROR_DDS_POSSIBLE_RANGE_CONFLICT
         when 20088
           "The specified IP address range is not present in Active Directory." #ERROR_DDS_RANGE_DOES_NOT_EXIST
+        when 20126
+          "The specified DHCP Server has reached the end of the selected range while finding the free IP address." #ERROR_DHCP_REACHED_END_OF_SELECTION
         else
           "Unknown error '#{code}'"
       end

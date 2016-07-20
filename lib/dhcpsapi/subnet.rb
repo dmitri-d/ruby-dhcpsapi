@@ -76,6 +76,10 @@ module DhcpsApi
       subnets.map {|subnet| dhcp_get_subnet_info(subnet)}
     end
 
+    def get_subnet(subnet_address)
+      dhcp_get_subnet_info(ip_to_uint32(subnet_address))
+    end
+
     def create_subnet(subnet_address, subnet_mask, subnet_name, subnet_comment)
       subnet_info = DhcpsApi::DHCP_SUBNET_INFO.new
       subnet_info[:subnet_address] = ip_to_uint32(subnet_address)

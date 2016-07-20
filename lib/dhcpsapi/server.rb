@@ -8,6 +8,7 @@ module DhcpsApi
     include OptionValue
     include Reservation
     include Subnet
+    include Misc
 
     attr_reader :server_ip_address
 
