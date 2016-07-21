@@ -207,6 +207,10 @@ typedef struct _DHCP_CLIENT_INFO_PB_ARRAY {
       to_return
     end
 
+    def get_client_subnet(client)
+      uint32_to_ip(ip_to_uint32(client[:client_ip_address]) & ip_to_uint32(client[:subnet_mask]))
+    end
+
     def get_client_by_mac_address(subnet_address, client_mac_address)
       search_info = DhcpsApi::DHCP_SEARCH_INFO.new
       search_info[:search_type] = DhcpsApi::DHCP_SEARCH_INFO_TYPE::DhcpClientHardwareAddress
