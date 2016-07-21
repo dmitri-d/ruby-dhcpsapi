@@ -5,11 +5,12 @@ require "dhcpsapi/version"
 Gem::Specification.new do |gem|
   gem.authors               = ["Dmitri Dolguikh"]
   gem.email                 = 'dmitri@appliedlogic.ca'
-  gem.description           = %q{Ruby wrappers for MS DHCP api}
+  gem.description           = 'Ruby wrappers for MS DHCP api'
+  gem.summary               = 'Ruby wrappers for MS DHCP api'
   gem.homepage              = "https://github.com/witlessbird/ruby-dhcpsapi"
   gem.license               = "Apache License, v2.0"
 
-  gem.required_ruby_version = '>= 1.8.7'
+  #gem.required_ruby_version = '>= 1.8.7'
 
   gem.files                 = %w(LICENSE.txt README.md Rakefile) + Dir["lib/**/*"]
   gem.name                  = "dhcpsapi"
