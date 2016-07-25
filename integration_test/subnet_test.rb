@@ -19,6 +19,9 @@ class SubnetTest < Test::Unit::TestCase
     assert subnets.any? {|s| s[:subnet_name] == 'subnet one'}
     assert subnets.any? {|s| s[:subnet_name] == 'subnet two'}
 
+    @api.add_subnet_ip_range(@subnet_1, '192.168.242.10', '192.168.242.20')
+    @api.delete_subnet_ip_range(@subnet_1, '192.168.242.10', '192.168.242.20')
+
     @api.delete_subnet(@subnet_1)
     @api.delete_subnet(@subnet_2)
     assert_equal original_subnet_number, @api.list_subnets.size

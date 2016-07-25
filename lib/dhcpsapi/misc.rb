@@ -22,8 +22,8 @@ module DhcpsApi
                                       num_of_addresses,
                                       dhcp_ip_array_ptr_ptr)
 
-      return empty_response if error == 259
-      if is_error?(error) && error != 20126
+      return [] if (error == 2 || error == 20126)
+      if is_error?(error)
         unless (dhcp_ip_array_ptr_ptr.null? || (to_free = dhcp_ip_array_ptr_ptr.read_pointer).null?)
           free_memory(DhcpsApi::DHCP_IP_ARRAY.new(to_free))
         end

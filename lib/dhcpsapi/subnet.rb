@@ -30,6 +30,19 @@ module DhcpsApi
   end
 
 =begin
+  typedef struct _DHCP_IP_RANGE {
+    DHCP_IP_ADDRESS StartAddress;
+    DHCP_IP_ADDRESS EndAddress;
+  } DHCP_IP_RANGE, *LPDHCP_IP_RANGE;
+=end
+  class DHCP_IP_RANGE < DHCPS_Struct
+    layout :start_address, :uint32,
+           :end_address, :uint32
+
+    ruby_struct_attr :uint32_to_ip, :subnet_address, :subnet_mask
+  end
+
+=begin
   DWORD DHCP_API_FUNCTION DhcpEnumSubnets(
     _In_    DHCP_CONST WCHAR   *ServerIpAddress,
     _Inout_ DHCP_RESUME_HANDLE *ResumeHandle,
@@ -96,6 +109,34 @@ module DhcpsApi
     def delete_subnet(subnet_address, force_flag = DhcpsApi::DHCP_FORCE_FLAG::DhcpNoForce)
       error = DhcpsApi.DhcpDeleteSubnet(to_wchar_string(server_ip_address), ip_to_uint32(subnet_address), force_flag)
       raise DhcpsApi::Error.new("Error deleting subnet.", error) if error != 0
+    end
+
+    def add_subnet_ip_range(subnet_address, start_address, end_address)
+      subnet_element = DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.new
+      subnet_element[:element_type] = DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpIpRanges
+      subnet_element[:element][:ip_range] = (ip_range = DhcpsApi::DHCP_IP_RANGE.new).pointer
+      ip_range[:start_address] = ip_to_uint32(start_address)
+      ip_range[:end_address] = ip_to_uint32(end_address)
+
+      error = DhcpsApi.DhcpAddSubnetElementV4(to_wchar_string(server_ip_address), ip_to_uint32(subnet_address), subnet_element.pointer)
+      raise DhcpsApi::Error.new("Error adding a subnet range to '%s'." % [subnet_address], error) if error != 0
+
+      subnet_element.as_ruby_struct
+    end
+
+    def delete_subnet_ip_range(subnet_address, start_address, end_address)
+      to_delete = DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.new
+      to_delete[:element_type] = DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpIpRanges
+      to_delete[:element][:ip_range] = (ip_range = DhcpsApi::DHCP_IP_RANGE.new).pointer
+      ip_range[:start_address] = ip_to_uint32(start_address)
+      ip_range[:end_address] = ip_to_uint32(end_address)
+
+      error = DhcpsApi.DhcpRemoveSubnetElementV4(
+          to_wchar_string(server_ip_address),
+          ip_to_uint32(subnet_address),
+          to_delete.pointer,
+          DhcpsApi::DHCP_FORCE_FLAG::DhcpNoForce)
+      raise DhcpsApi::Error.new("Error deleting reservation.", error) if error != 0
     end
 
     def enum_subnets
