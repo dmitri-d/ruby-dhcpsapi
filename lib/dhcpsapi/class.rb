@@ -1,14 +1,16 @@
 module DhcpsApi
-=begin
-  typedef struct _DHCP_CLASS_INFO {
-    LPWSTR ClassName;
-    LPWSTR ClassComment;
-    DWORD  ClassDataLength;
-    BOOL   IsVendor;
-    DWORD  Flags;
-    LPBYTE ClassData;
-  } DHCP_CLASS_INFO, *LPDHCP_CLASS_INFO;
-=end
+  #
+  # DHCP_CLASS_INFO data structure describes an option class.
+  #
+  # Available fields:
+  # :class_name [String],
+  # :class_comment [String],
+  # :is_vendor [Boolean],
+  # :flags [Fixnum],
+  # :class_data [String]
+  #
+  # @see https://msdn.microsoft.com/en-us/library/windows/desktop/dd897569(v=vs.85).aspx
+  #
   class DHCP_CLASS_INFO < DHCPS_Struct
     layout :class_name, :pointer,
            :class_comment, :pointer,
@@ -20,17 +22,21 @@ module DhcpsApi
     ruby_struct_attr :to_string, :class_name, :class_comment, :policy_name
     ruby_struct_attr :class_data_as_string, :class_data
 
+    private
     def class_data_as_string(unused)
       self[:class_data].read_array_of_type(:uint8, :read_uint8, self[:class_data_length])
     end
   end
 
-=begin
-  typedef struct _DHCP_CLASS_INFO_ARRAY {
-    DWORD             NumElements;
-    LPDHCP_CLASS_INFO Classes;
-  } DHCP_CLASS_INFO_ARRAY, *LPDHCP_CLASS_INFO_ARRAY;
-=end
+  #
+  # DHCP_CLASS_INFO data structure describes an array of option classes.
+  #
+  # Available fields:
+  # :num_elements [Fixnum],
+  # :classes [Array<Hash>]
+  #
+  # @see https://msdn.microsoft.com/en-us/library/windows/desktop/dd897570(v=vs.85).aspx
+  #
   class DHCP_CLASS_INFO_ARRAY < DHCPS_Struct
     layout :num_elements, :uint32,
            :classes, :pointer
@@ -68,11 +74,34 @@ module DhcpsApi
   attach_function :DhcpDeleteClass, [:pointer, :uint32, :pointer], :uint32
 
   module Class
+    # Returns option classes available on the server as a List of DHCP_CLASS_INFOs represented as Hashmaps.
+    #
+    # @example Return available classes
+    #
+    # api.list_classes
+    #
+    # @return [Array<Hash>]
+    #
+    # @see DHCP_CLASS_INFO DHCP_CLASS_INFO documentation for the list of available fields.
+    #
     def list_classes
       items, _ = retrieve_items(:dhcp_enum_classes, 1024, 0)
       items
     end
 
+    # Creates a custom option class.
+    #
+    # @example Create a custom option class
+    #
+    # api.create_class('my_class', 'This is an example', false, 'my class')
+    #
+    # @param class_name [String] Name of the class
+    # @param comment [String] Comments
+    # @param is_vendor [Boolean] Specifies if the class is vendor-defined option class
+    # @param data [String] Class data
+    #
+    # @return [Hash]
+    #
     def create_class(class_name, comment, is_vendor, data)
       to_create = DhcpsApi::DHCP_CLASS_INFO.new
       to_create[:class_name] = FFI::MemoryPointer.from_string(to_wchar_string(class_name))
@@ -87,11 +116,22 @@ module DhcpsApi
       to_create.as_ruby_struct
     end
 
+    # Deletes a custom option class.
+    #
+    # @example Delete a custom option class
+    #
+    # api.delete_class('my_class')
+    #
+    # @param class_name [String] Name of the class
+    #
+    # @return [void]
+    #
     def delete_class(class_name)
       error = DhcpsApi.DhcpDeleteClass(to_wchar_string(server_ip_address), 0, to_wchar_string(class_name))
       raise DhcpsApi::Error.new("Error deleting class.", error) if error != 0
     end
 
+    private
     def dhcp_enum_classes(preferred_maximum, resume_handle)
       resume_handle_ptr = FFI::MemoryPointer.new(:uint32).put_uint32(0, resume_handle)
       class_info_ptr_ptr = FFI::MemoryPointer.new(:pointer)

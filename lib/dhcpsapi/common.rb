@@ -1,4 +1,5 @@
 module DhcpsApi
+  # @private
   module RubyStructAttrHelpers
     def to_string(a_ptr)
       return "" if a_ptr.null?
@@ -69,6 +70,7 @@ VOID DHCP_API_FUNCTION DhcpRpcFreeMemory(
 =end
   attach_function :DhcpRpcFreeMemory, [:pointer], :void
 
+# @private
   module CommonMethods
     def free_memory(a_struct)
       DhcpsApi.DhcpRpcFreeMemory(a_struct.pointer)

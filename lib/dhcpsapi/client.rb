@@ -189,24 +189,6 @@ typedef struct _DHCP_CLIENT_INFO_PB_ARRAY {
       to_modify.as_ruby_struct
     end
 
-    def get_client(search_info, client_id)
-      client_info_ptr_ptr = FFI::MemoryPointer.new(:pointer)
-
-      error = DhcpsApi.DhcpGetClientInfoV4(to_wchar_string(server_ip_address), search_info.pointer, client_info_ptr_ptr)
-      if is_error?(error)
-        unless (client_info_ptr_ptr.null? || (to_free = client_info_ptr_ptr.read_pointer).null?)
-          free_memory(DhcpsApi::DHCP_CLIENT_INFO_V4.new(to_free))
-        end
-        raise DhcpsApi::Error.new("Error retrieving client '%s'." % [client_id], error)
-      end
-
-      client_info = DhcpsApi::DHCP_CLIENT_INFO_V4.new(client_info_ptr_ptr.read_pointer)
-      to_return = client_info.as_ruby_struct
-
-      free_memory(client_info)
-      to_return
-    end
-
     def get_client_subnet(client)
       uint32_to_ip(ip_to_uint32(client[:client_ip_address]) & ip_to_uint32(client[:subnet_mask]))
     end
@@ -260,6 +242,25 @@ typedef struct _DHCP_CLIENT_INFO_PB_ARRAY {
 
       error = DhcpsApi.DhcpDeleteClientInfo(to_wchar_string(server_ip_address), search_info.pointer)
       raise DhcpsApi::Error.new("Error deleting client.", error) if error != 0
+    end
+
+    private
+    def get_client(search_info, client_id)
+      client_info_ptr_ptr = FFI::MemoryPointer.new(:pointer)
+
+      error = DhcpsApi.DhcpGetClientInfoV4(to_wchar_string(server_ip_address), search_info.pointer, client_info_ptr_ptr)
+      if is_error?(error)
+        unless (client_info_ptr_ptr.null? || (to_free = client_info_ptr_ptr.read_pointer).null?)
+          free_memory(DhcpsApi::DHCP_CLIENT_INFO_V4.new(to_free))
+        end
+        raise DhcpsApi::Error.new("Error retrieving client '%s'." % [client_id], error)
+      end
+
+      client_info = DhcpsApi::DHCP_CLIENT_INFO_V4.new(client_info_ptr_ptr.read_pointer)
+      to_return = client_info.as_ruby_struct
+
+      free_memory(client_info)
+      to_return
     end
 
     def dhcp_v4_enum_subnet_clients(subnet_address, preferred_maximum, resume_handle)

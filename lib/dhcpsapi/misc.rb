@@ -12,7 +12,19 @@ module DhcpsApi
   attach_function :DhcpV4GetFreeIPAddress, [:pointer, :uint32, :uint32, :uint32, :uint32, :pointer], :uint32
 
   module Misc
-    include CommonMethods
+    # Returns free ip addresses as a List of Strings.
+    #
+    # @example Return five free ip addresses within an ip range
+    #
+    # api.get_free_ip_address('192.168.42.0', '192.168.42.10', '192.168.42.20', 5)
+    #
+    # @param subnet_address [String] Ip address of the subnet to return free ip addresses for
+    # @param start_address [String, nil] Starting point address of the range from which free ip addresses are retrieved or nil
+    # @param end_address [String, nil] End point address of the range from which free ip addresses are retrieved or nil
+    # @param num_of_addresses [Fixnum, 1] The number of free ip addresses to retrieve
+    #
+    # @return [Array<String>]
+    #
     def get_free_ip_address(subnet_address, start_address = nil, end_address = nil, num_of_addresses = 1)
       dhcp_ip_array_ptr_ptr = FFI::MemoryPointer.new(:pointer)
       error = DhcpsApi.DhcpV4GetFreeIPAddress(to_wchar_string(server_ip_address),
