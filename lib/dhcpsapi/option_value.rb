@@ -1,15 +1,24 @@
 module DhcpsApi
-=begin
-  typedef struct _DHCP_RESERVED_SCOPE {
-    DHCP_IP_ADDRESS ReservedIpAddress;
-    DHCP_IP_ADDRESS ReservedIpSubnetAddress;
-  } DHCP_RESERVED_SCOPE, *LPDHCP_RESERVED_SCOPE;
-=end
+  #
+  # DHCP_RESERVED_SCOPE data structure describes an reserved DHCP scope.
+  #
+  # Available fields:
+  # :reserved_ip_address [String],
+  # :reserved_ip_subnet_address [String]
+  #
+  # @see https://msdn.microsoft.com/en-us/library/windows/desktop/aa363369(v=vs.85).aspx
+  #
   class DHCP_RESERVED_SCOPE < DHCPS_Struct
     layout :reserved_ip_address, :uint32,
            :reserved_ip_subnet_address, :uint32
   end
 
+
+  #
+  # DHCP_OPTION_SCOPE_TYPE enumeration defines the set of possible DHCP option scopes.
+  #
+  # @see https://msdn.microsoft.com/en-us/library/windows/desktop/aa363363(v=vs.85).aspx
+  #
   class DHCP_OPTION_SCOPE_TYPE
     # The DHCP options correspond to the default scope.
     DhcpDefaultOptions = 0
@@ -23,18 +32,18 @@ module DhcpsApi
     DhcpMScopeOptions = 4
   end
 
-=begin
-  typedef struct _DHCP_OPTION_SCOPE_INFO {
-    DHCP_OPTION_SCOPE_TYPE ScopeType;
-    union {
-      DHCP_IP_ADDRESS     SubnetScopeInfo;
-      DHCP_RESERVED_SCOPE ReservedScopeInfo;
-      LPWSTR              MScopeInfo;
-      PVOID               DefaultScopeInfo;
-      PVOID               GlobalScopeInfo; //Pointer to a DHCP_OPTION_ARRAY structure that contains the global DHCP server options.
-    } ScopeInfo;
-  } DHCP_OPTION_SCOPE_INFO, *LPDHCP_OPTION_SCOPE_INFO;
-=end
+  #
+  # DHCP_RESERVED_SCOPE_UNION describes a DHCP scope.
+  #
+  # Available fields:
+  # :subnet_scope_info [String],
+  # :reserved_scope_info [DHCP_RESERVED_SCOPE],
+  # :m_scope_info [String],
+  # :default_scope_info, unused
+  # :global_scope_info
+  #
+  # @see https://msdn.microsoft.com/en-us/library/windows/desktop/aa363361(v=vs.85).aspx
+  #
   class DHCP_OPTION_SCOPE_INFO_UNION < FFI::Union
     layout :subnet_scope_info, :uint32,
            :reserved_scope_info, DHCP_RESERVED_SCOPE,
@@ -43,6 +52,15 @@ module DhcpsApi
            :global_scope_info, :pointer
   end
 
+  #
+  # DHCP_OPTION_SCOPE_INFO defines information about the options provided for a certain DHCP scope.
+  #
+  # Available fields:
+  # :scope_type [Fixnum], see DHCP_OPTION_SCOPE_TYPE
+  # :scope_info [DHCP_OPTION_SCOPE_INFO_UNION],
+  #
+  # @see https://msdn.microsoft.com/en-us/library/windows/desktop/aa363361(v=vs.85).aspx
+  #
   class DHCP_OPTION_SCOPE_INFO < DHCPS_Struct
     layout :scope_type, :uint32,
            :scope_info, DHCP_OPTION_SCOPE_INFO_UNION
@@ -82,23 +100,29 @@ module DhcpsApi
     end
   end
 
-=begin
-typedef struct _DHCP_OPTION_VALUE {
-  DHCP_OPTION_ID   OptionID;
-  DHCP_OPTION_DATA Value;
-} DHCP_OPTION_VALUE, *LPDHCP_OPTION_VALUE;
-=end
+  #
+  # DHCP_OPTION_VALUE defines a DHCP option value.
+  #
+  # Available fields:
+  # :option_id [Fixnum], Option id
+  # :value [DHCP_OPTION_DATA], option value
+  #
+  # @see https://msdn.microsoft.com/en-us/library/windows/desktop/aa363367(v=vs.85).aspx
+  #
   class DHCP_OPTION_VALUE < DHCPS_Struct
     layout :option_id, :uint32,
            :value, DHCP_OPTION_DATA
   end
 
-=begin
-  typedef struct _DHCP_OPTION_VALUE_ARRAY {
-    DWORD               NumElements;
-    LPDHCP_OPTION_VALUE Values;
-  } DHCP_OPTION_VALUE_ARRAY, *LPDHCP_OPTION_VALUE_ARRAY;
-=end
+  #
+  # DHCP_OPTION_VALUE_ARRAY defines a list of DHCP option values.
+  #
+  # Available fields:
+  # :bum_elements [Fixnum], The number of option values in the list
+  # :values [Array<DHCP_OPTION_DATA>], Array of option values
+  #
+  # @see https://msdn.microsoft.com/en-us/library/windows/desktop/bb891963(v=vs.85).aspx
+  #
   class DHCP_OPTION_VALUE_ARRAY < DHCPS_Struct
     layout :num_elements, :uint32,
            :values, :pointer
@@ -165,7 +189,22 @@ typedef struct _DHCP_OPTION_VALUE {
   attach_function :DhcpSetOptionValueV5, [:pointer, :uint32, :uint32, :pointer, :pointer, :pointer, :pointer], :uint32
 
   module OptionValue
-    # see DHCP_OPTION_DATA_TYPE for option_type values
+    # Sets an option value for a subnet.
+    #
+    # @example Set a subnet option value
+    #
+    # api.set_subnet_option_value(3, '192.168.42.0', DhcpsApi::DHCP_OPTION_DATA_TYPE::DhcpIpAddressOption, ['192.168.42.1', '192.168.42.2'])
+    #
+    # @param option_id [Fixnum] Option id
+    # @param subnet_ip_address [String] Subnet ip address
+    # @param option_type [DHCP_OPTION_DATA_TYPE] Option type
+    # @param values [Array] Array of values (or an array of one element if option supports one value only)
+    # @param vendor_name [String, nil] The name of the vendor class (for vendor options)
+    #
+    # @return [void]
+    #
+    # @see DHCP_OPTION_DATA_TYPE DHCP_OPTION_DATA_TYPE documentation for the list of available option types.
+    #
     def set_subnet_option_value(option_id, subnet_ip_address, option_type, values, vendor_name = nil)
       dhcp_set_option_value_v5(
           option_id,
@@ -176,7 +215,23 @@ typedef struct _DHCP_OPTION_VALUE {
       )
     end
 
-    # see DHCP_OPTION_DATA_TYPE for option_type values
+    # Sets an option value for a reservation.
+    #
+    # @example Set a reservation option value
+    #
+    # api.set_reservationt_option_value(3, '192.168.42.100', '192.168.42.0', DhcpsApi::DHCP_OPTION_DATA_TYPE::DhcpIpAddressOption, ['192.168.42.1', '192.168.42.2'])
+    #
+    # @param option_id [Fixnum] Option id
+    # @param subnet_ip_address [String] Reservation ip address
+    # @param subnet_ip_address [String] Subnet ip address
+    # @param option_type [DHCP_OPTION_DATA_TYPE] Option type
+    # @param values [Array] array of values (or an array of one element if option supports one value only)
+    # @param vendor_name [String, nil] The name of the vendor class (for vendor options)
+    #
+    # @return [void]
+    #
+    # @see DHCP_OPTION_DATA_TYPE DHCP_OPTION_DATA_TYPE documentation for the list of available option types.
+    #
     def set_reserved_option_value(option_id, reserved_ip_address, subnet_ip_address, option_type, values, vendor_name = nil)
       dhcp_set_option_value_v5(
           option_id,
@@ -187,7 +242,22 @@ typedef struct _DHCP_OPTION_VALUE {
       )
     end
 
-    # see DHCP_OPTION_DATA_TYPE for option_type values
+    # Sets an option value for a multicast scope.
+    #
+    # @example Set a multicast scope option value
+    #
+    # api.set_multicast_option_value(26, '224.0.0.0', DhcpsApi::DHCP_OPTION_DATA_TYPE::DhcpWordOption, [1500])
+    #
+    # @param option_id [Fixnum] Option id
+    # @param multicast_scope_name [String] Multicast scope ip address
+    # @param option_type [DHCP_OPTION_DATA_TYPE] Option type
+    # @param values [Array] array of values (or an array of one element if option supports one value only)
+    # @param vendor_name [String, nil] The name of the vendor class (for vendor options)
+    #
+    # @return [void]
+    #
+    # @see DHCP_OPTION_DATA_TYPE DHCP_OPTION_DATA_TYPE documentation for the list of available option types.
+    #
     def set_multicast_option_value(option_id, multicast_scope_name, option_type, values, vendor_name = nil)
       dhcp_set_option_value_v5(
           option_id,
@@ -198,7 +268,21 @@ typedef struct _DHCP_OPTION_VALUE {
       )
     end
 
-    # see DHCP_OPTION_DATA_TYPE for option_type values
+    # Sets an option value for a default scope.
+    #
+    # @example Set an option value
+    #
+    # api.set_option_value(26, DhcpsApi::DHCP_OPTION_DATA_TYPE::DhcpWordOption, [1500])
+    #
+    # @param option_id [Fixnum] Option id
+    # @param option_type [DHCP_OPTION_DATA_TYPE] Option type
+    # @param values [Array] array of values (or an array of one element if option supports one value only)
+    # @param vendor_name [String, nil] The name of the vendor class (for vendor options)
+    #
+    # @return [void]
+    #
+    # @see DHCP_OPTION_DATA_TYPE DHCP_OPTION_DATA_TYPE documentation for the list of available option types.
+    #
     def set_option_value(option_id, option_type, values, vendor_name = nil)
       dhcp_set_option_value_v5(
           option_id,
@@ -209,6 +293,20 @@ typedef struct _DHCP_OPTION_VALUE {
       )
     end
 
+    # Retrieves an option value for a subnet.
+    #
+    # @example Retrieve a subnet option value
+    #
+    # api.get_subnet_option_value(3, '192.168.42.0')
+    #
+    # @param option_id [Fixnum] Option id
+    # @param subnet_ip_address [String] Subnet ip address
+    # @param vendor_name [String, nil] The name of the vendor class (for vendor options)
+    #
+    # @return [Hash]
+    #
+    # @see DHCP_OPTION_VALUE DHCP_OPTION_VALUE documentation for the list of available fields.
+    #
     def get_subnet_option_value(option_id, subnet_ip_address, vendor_name = nil)
       dhcp_get_option_value_v5(
           option_id,
@@ -217,6 +315,21 @@ typedef struct _DHCP_OPTION_VALUE {
       )
     end
 
+    # Retrieves an option value for a reservation.
+    #
+    # @example Retrieve a reservation option value
+    #
+    # api.get_reserved_option_value(3, '192.168.42.100', 192.168.42.0')
+    #
+    # @param option_id [Fixnum] Option id
+    # @param reserved_ip_address [String] Reservation ip address
+    # @param subnet_ip_address [String] Subnet ip address
+    # @param vendor_name [String, nil] The name of the vendor class (for vendor options)
+    #
+    # @return [Hash]
+    #
+    # @see DHCP_OPTION_VALUE DHCP_OPTION_VALUE documentation for the list of available fields.
+    #
     def get_reserved_option_value(option_id, reserved_ip_address, subnet_ip_address, vendor_name = nil)
       dhcp_get_option_value_v5(
           option_id,
@@ -225,6 +338,21 @@ typedef struct _DHCP_OPTION_VALUE {
       )
     end
 
+
+    # Retrieves an option value for a multicast scope.
+    #
+    # @example Retrieve a multicast scope option value
+    #
+    # api.get_multicast_option_value(3, '224.0.0.0')
+    #
+    # @param option_id [Fixnum] Option id
+    # @param multicast_scope_name [String] Multicast scope ip address
+    # @param vendor_name [String, nil] The name of the vendor class (for vendor options)
+    #
+    # @return [Hash]
+    #
+    # @see DHCP_OPTION_VALUE DHCP_OPTION_VALUE documentation for the list of available fields.
+    #
     def get_multicast_option_value(option_id, multicast_scope_name, vendor_name = nil)
       dhcp_get_option_value_v5(
           option_id,
@@ -233,6 +361,19 @@ typedef struct _DHCP_OPTION_VALUE {
       )
     end
 
+    # Retrieves an option value for a default scope.
+    #
+    # @example Retrieve an option value
+    #
+    # api.get_option_value(3)
+    #
+    # @param option_id [Fixnum] Option id
+    # @param vendor_name [String, nil] The name of the vendor class (for vendor options)
+    #
+    # @return [Hash]
+    #
+    # @see DHCP_OPTION_VALUE DHCP_OPTION_VALUE documentation for the list of available fields.
+    #
     def get_option_value(option_id, vendor_name = nil)
       dhcp_get_option_value_v5(
           option_id,
@@ -241,6 +382,18 @@ typedef struct _DHCP_OPTION_VALUE {
       )
     end
 
+    # Removes an option value for a subnet.
+    #
+    # @example Remove a subnet option value
+    #
+    # api.remove_subnet_option_value(3, '192.168.42.0')
+    #
+    # @param option_id [Fixnum] Option id
+    # @param subnet_ip_address [String] Subnet ip address
+    # @param vendor_name [String, nil] The name of the vendor class (for vendor options)
+    #
+    # @return [void]
+    #
     def remove_subnet_option_value(option_id, subnet_ip_address, vendor_name = nil)
       dhcp_remove_option_value_v5(
           option_id,
@@ -249,6 +402,19 @@ typedef struct _DHCP_OPTION_VALUE {
       )
     end
 
+    # Removes an option value for a reservation.
+    #
+    # @example Remove a reservation option value
+    #
+    # api.remove_reserved_option_value(3, '192.168.42.100', 192.168.42.0')
+    #
+    # @param option_id [Fixnum] Option id
+    # @param reserved_ip_address [String] Reservation ip address
+    # @param subnet_ip_address [String] Subnet ip address
+    # @param vendor_name [String, nil] The name of the vendor class (for vendor options)
+    #
+    # @return [void]
+    #
     def remove_reserved_option_value(option_id, reserved_ip_address, subnet_ip_address, vendor_name = nil)
       dhcp_remove_option_value_v5(
           option_id,
@@ -257,6 +423,18 @@ typedef struct _DHCP_OPTION_VALUE {
       )
     end
 
+    # Removes an option value for a multicast scope.
+    #
+    # @example Remove a multicast scope option value
+    #
+    # api.remove_multicast_option_value(3, '224.0.0.0')
+    #
+    # @param option_id [Fixnum] Option id
+    # @param multicast_scope_name [String] Multicast scope ip address
+    # @param vendor_name [String, nil] The name of the vendor class (for vendor options)
+    #
+    # @return [void]
+    #
     def remove_multicast_option_value(option_id, multicast_scope_name, vendor_name = nil)
       dhcp_remove_option_value_v5(
           option_id,
@@ -265,6 +443,17 @@ typedef struct _DHCP_OPTION_VALUE {
       )
     end
 
+    # Removes a default scope option value.
+    #
+    # @example Remove a default scope option value
+    #
+    # api.remove_option_value(3)
+    #
+    # @param option_id [Fixnum] Option id
+    # @param vendor_name [String, nil] The name of the vendor class (for vendor options)
+    #
+    # @return [void]
+    #
     def remove_option_value(option_id, vendor_name = nil)
       dhcp_remove_option_value_v5(
           option_id,
@@ -273,6 +462,19 @@ typedef struct _DHCP_OPTION_VALUE {
       )
     end
 
+    # List option values for a subnet.
+    #
+    # @example Retrieve all subnet option values
+    #
+    # api.list_subnet_option_values('192.168.42.0')
+    #
+    # @param subnet_ip_address [String] Subnet ip address
+    # @param vendor_name [String, nil] The name of the vendor class (for vendor options)
+    #
+    # @return [Array<Hash>]
+    #
+    # @see DHCP_OPTION_VALUE DHCP_OPTION_VALUE documentation for the list of available fields.
+    #
     def list_subnet_option_values(subnet_ip_address, vendor_name = nil)
       items, _ = retrieve_items(:dhcp_enum_option_values_v5,
                                 vendor_name,
@@ -281,6 +483,20 @@ typedef struct _DHCP_OPTION_VALUE {
       items
     end
 
+    # List option values for a reservation.
+    #
+    # @example Retrieve all option values for a reservation
+    #
+    # api.list_reserved_option_values('192.168.42.100', '192.168.42.0')
+    #
+    # @param reserved_ip_address [String] Reservation ip address
+    # @param subnet_ip_address [String] Subnet ip address
+    # @param vendor_name [String, nil] The name of the vendor class (for vendor options)
+    #
+    # @return [Array<Hash>]
+    #
+    # @see DHCP_OPTION_VALUE DHCP_OPTION_VALUE documentation for the list of available fields.
+    #
     def list_reserved_option_values(reserved_ip_address, subnet_ip_address, vendor_name = nil)
       items, _ = retrieve_items(:dhcp_enum_option_values_v5,
                                 vendor_name,
@@ -289,6 +505,19 @@ typedef struct _DHCP_OPTION_VALUE {
       items
     end
 
+    # List option values for a multicast scope.
+    #
+    # @example Retrieve all option values for a multicast scope
+    #
+    # api.list_multicast_option_values('224.0.0.0')
+    #
+    # @param multicast_scope_name [String] Multicast scope ip address
+    # @param vendor_name [String, nil] The name of the vendor class (for vendor options)
+    #
+    # @return [Array<Hash>]
+    #
+    # @see DHCP_OPTION_VALUE DHCP_OPTION_VALUE documentation for the list of available fields.
+    #
     def list_multicast_option_values(multicast_scope_name, vendor_name = nil)
       items, _ = retrieve_items(:dhcp_enum_option_values_v5,
                                 vendor_name,
@@ -297,6 +526,18 @@ typedef struct _DHCP_OPTION_VALUE {
       items
     end
 
+    # List option values for a default scope.
+    #
+    # @example Retrieve all option values for a default scope
+    #
+    # api.list_multicast_option_values
+    #
+    # @param vendor_name [String, nil] The name of the vendor class (for vendor options)
+    #
+    # @return [Array<Hash>]
+    #
+    # @see DHCP_OPTION_VALUE DHCP_OPTION_VALUE documentation for the list of available fields.
+    #
     def list_values(vendor_name = nil)
       items, _ = retrieve_items(:dhcp_enum_option_values_v5,
                                 vendor_name,
@@ -305,7 +546,7 @@ typedef struct _DHCP_OPTION_VALUE {
       items
     end
 
-    # see DHCP_OPTION_DATA_TYPE for option_type values
+    private
     def dhcp_set_option_value_v5(option_id, vendor_name, scope_info, option_type, values)
       is_vendor = vendor_name.nil? ? 0 : DhcpsApi::DHCP_FLAGS_OPTION_IS_VENDOR
       option_data = DhcpsApi::DHCP_OPTION_DATA.from_array(option_type, values)

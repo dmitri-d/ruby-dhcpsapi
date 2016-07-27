@@ -102,6 +102,7 @@ module DhcpsApi
     #
     # @return [Hash]
     #
+    # @see DHCP_CLASS_INFO DHCP_CLASS_INFO documentation for the list of available fields.
     def create_class(class_name, comment, is_vendor, data)
       to_create = DhcpsApi::DHCP_CLASS_INFO.new
       to_create[:class_name] = FFI::MemoryPointer.from_string(to_wchar_string(class_name))
