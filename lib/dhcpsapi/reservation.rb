@@ -88,7 +88,7 @@ module DhcpsApi
       subnet_element.as_ruby_struct
     end
 
-    def delete_reservation(subnet_address, reservation_ip, reservation_mac)
+    def delete_reservation(reservation_ip, subnet_address, reservation_mac)
       to_delete = DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.new
       to_delete[:element_type] = DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpReservedIps
       to_delete[:element][:reserved_ip] = (reserved_ip = DhcpsApi::DHCP_IP_RESERVATION_V4.new).pointer
@@ -103,6 +103,34 @@ module DhcpsApi
           to_delete.pointer,
           DhcpsApi::DHCP_FORCE_FLAG::DhcpNoForce)
       raise DhcpsApi::Error.new("Error deleting reservation.", error) if error != 0
+    end
+
+    # Sets dns configuration for a reservation.
+    #
+    # @example Enable dynamic dns updates when requested by DHCP client
+    #
+    # api.set_reservation_dns_config('192.168.42.100', '192.168.42.0', true, false, false, false, false)
+    #
+    # @param reservation_ip [String] Reservation ip address
+    # @param subnet_ip_address [String] Subnet ip address
+    # @param enable [Boolean] enable dynamic updates of DNS client information
+    # @param update [Boolean] always dynamically update DNS and PTR records
+    # @param lookup [Boolean] Discard A and PTR records when lease is deleted
+    # @param non_dyn [Boolean] Dynamically update DNS A and PTR records for DHCP clients that do not request updates
+    # @param disable_ddns_updates_for_ptr [Boolean] Disable dynamic updates for DNS PTR records
+    #
+    # @return [void]
+    #
+    # @see https://technet.microsoft.com/en-gb/library/bb490941.aspx, set dnsconfig section
+    #
+    def set_reservation_dns_config(reservation_ip, subnet_address, enable, update, lookup, non_dyn, disable_ddns_updates_for_ptr)
+      value = enable ? 1 : 0
+      value = value | 0x10 if update
+      value = value | 4 if lookup
+      value = value | 2 if non_dyn
+      value = value | 0x40 if disable_ddns_updates_for_ptr
+
+      set_reserved_option_value(81, reservation_ip, subnet_address, DhcpsApi::DHCP_OPTION_DATA_TYPE::DhcpDWordOption, [value])
     end
 
     def dhcp_v4_enum_subnet_reservations(subnet_address, preferred_maximum, resume_handle)
