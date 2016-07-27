@@ -5,7 +5,6 @@ require 'set'
 class OptionValueTest < Test::Unit::TestCase
   def setup
     @subnet_1 = "192.168.242.0"
-    @subnet_2 = "192.168.243.0"
     @api = DhcpsApi::Server.new('127.0.0.1')
 
     @api.create_subnet(@subnet_1, '255.255.255.0', 'subnet one', 'subnet one comment')
@@ -74,6 +73,30 @@ class OptionValueTest < Test::Unit::TestCase
   end
 
   def test_create_list_delete_reserved_option_value
+    client_ip = '192.168.242.254'
+    @api.create_reservation(client_ip, '255.255.255.0', '00:01:02:03:04:05', 'test_reservation_1', 'test client 1 comment')
+
+    original_option_values = @api.list_reserved_option_values(client_ip, @subnet_1)
+    original_vendor_option_values = @api.list_reserved_option_values(client_ip, @subnet_1, 'test_vendor')
+
+    @api.set_reserved_option_value(223, client_ip, @subnet_1, DhcpsApi::DHCP_OPTION_DATA_TYPE::DhcpStringDataOption, ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'])
+    @api.set_reserved_option_value(224, client_ip, @subnet_1, DhcpsApi::DHCP_OPTION_DATA_TYPE::DhcpStringDataOption, 'another test value', 'test_vendor')
+    @api.set_reserved_option_value(225, client_ip, @subnet_1, DhcpsApi::DHCP_OPTION_DATA_TYPE::DhcpStringDataOption, 'test value')
+
+    option_values = @api.list_reserved_option_values(client_ip, @subnet_1).map {|o_v| o_v[:option_id]}
+    assert_equal Set.new([223, 225]), Set.new(option_values - original_option_values.map {|o_v| o_v[:option_id]})
+    vendor_option_values = @api.list_reserved_option_values(client_ip, @subnet_1, 'test_vendor').map {|o_v| o_v[:option_id]}
+    assert_equal [224], (vendor_option_values - original_vendor_option_values.map {|o_v| o_v[:option_id]})
+
+    assert_equal({:option_id => 224 + 256, :value => [{:option_type => 5, :element => 'another test value'}]}, @api.get_reserved_option_value(224, client_ip, @subnet_1, 'test_vendor'))
+    assert_equal({:option_id => 225, :value => [{:option_type => 5, :element => 'test value'}]}, @api.get_reserved_option_value(225, client_ip, @subnet_1))
+
+    @api.remove_reserved_option_value(223, client_ip, @subnet_1)
+    @api.remove_reserved_option_value(224, client_ip, @subnet_1, 'test_vendor')
+    @api.remove_reserved_option_value(225, client_ip, @subnet_1)
+
+    assert_equal original_option_values, @api.list_reserved_option_values(client_ip, @subnet_1)
+    assert_equal original_vendor_option_values, @api.list_reserved_option_values(client_ip, @subnet_1, 'test_vendor')
   end
 
   def test_create_list_delete_multicast_option_value
