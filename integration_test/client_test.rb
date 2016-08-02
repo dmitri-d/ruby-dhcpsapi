@@ -19,20 +19,21 @@ class ClientTest < Test::Unit::TestCase
                        'test client 3 comment', 0)
 
     clients = @api.list_clients(@subnet_1)
-    assert clients.any? {|s| s == {:client_ip_address => '192.168.242.254',
-                                   :subnet_mask => '255.255.255.0',
-                                   :client_hardware_address => '01:01:02:03:04:05',
-                                   :client_name => 'test_client_1',
-                                   :client_comment => 'test client 1 comment',
-                                   :client_lease_expires => nil,
-                                   :owner_host => {:ip_address => '127.0.0.1', :netbios_name => '', :host_name => ''},
-                                   :b_client_type => 100,
-                                   :address_state => 1,
-                                   :status => 0,
-                                   :probation_ends => nil,
-                                   :quarantine_capable => false,
-                                   :filter_status => 1,
-                                   :policy_name => ''} }
+#    assert clients.any? {|s| s == {:client_ip_address => '192.168.242.254',
+#                                   :subnet_mask => '255.255.255.0',
+#                                   :client_hardware_address => '01:01:02:03:04:05',
+#                                   :client_name => 'test_client_1',
+#                                   :client_comment => 'test client 1 comment',
+#                                   :client_lease_expires => nil,
+#                                   :owner_host => {:ip_address => '127.0.0.1', :netbios_name => '', :host_name => ''},
+#                                   :b_client_type => 100,
+#                                   :address_state => 1,
+#                                   :status => 0,
+#                                   :probation_ends => nil,
+#                                   :quarantine_capable => false,
+#                                   :filter_status => 1,
+#                                   :policy_name => ''} }
+    assert clients.any? {|s| s[:client_name] == 'test_client_1'}
     assert clients.any? {|s| s[:client_name] == 'test_client_2'}
     assert clients.any? {|s| s[:client_name] == 'test_client_3'}
 
