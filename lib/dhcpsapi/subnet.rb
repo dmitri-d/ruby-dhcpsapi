@@ -1,12 +1,4 @@
 module DhcpsApi
-  class DHCP_SUBNET_STATE
-    DhcpsApiubnetEnabled = 0
-    DhcpsApiubnetDisabled = 1
-    DhcpsApiubnetEnabledSwitched = 2
-    DhcpsApiubnetDisabledSwitched = 3
-    DhcpsApiubnetInvalidState = 4
-  end
-
 =begin
   typedef struct _DHCP_SUBNET_INFO {
     DHCP_IP_ADDRESS   SubnetAddress;

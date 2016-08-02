@@ -1,23 +1,4 @@
 module DhcpsApi
-  class QuarantineStatus
-    #The DHCP client is compliant with the health policies defined by the administrator and has normal access to the network.
-    NOQUARANTINE = 0
-    #The DHCP client is not compliant with the health policies defined by the administrator and is being quarantined with restricted access to the network.
-    RESTRICTEDACCESS = 1
-    #The DHCP client is not compliant with the health policies defined by the administrator and is being denied access to the network.
-    # The DHCP server does not grant an IP address lease to this client.
-    DROPPACKET = 2
-    #The DHCP client is not compliant with the health policies defined by the administrator and is being granted normal access to the network for a limited time.
-    PROBATION = 3
-    #The DHCP client is exempt from compliance with the health policies defined by the administrator and is granted normal access to the network.
-    EXEMPT = 4
-    #The DHCP client is put into the default quarantine state configured on the DHCP NAP server. When a network policy server (NPS) is unavailable,
-    # the DHCP client can be put in any of the states NOQUARANTINE, RESTRICTEDACCESS, or DROPPACKET, depending on the default setting on the DHCP NAP server.
-    DEFAULTQUARSETTING = 5
-    #No quarantine.
-    NOQUARINFO = 6
-  end
-
 =begin
   typedef struct _DHCP_CLIENT_INFO_PB {
     DHCP_IP_ADDRESS  ClientIpAddress;

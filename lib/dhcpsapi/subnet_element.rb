@@ -1,26 +1,5 @@
 module DhcpsApi
 =begin
-  typedef enum _DHCP_SUBNET_ELEMENT_TYPE_V5 {
-    DhcpIpRanges,
-    DhcpSecondaryHosts,
-    DhcpReservedIps,
-    DhcpExcludedIpRanges,
-    DhcpIpRangesDhcpOnly,
-    DhcpIpRangesDhcpBootp,
-    DhcpIpRangesBootpOnly
-  } DHCP_SUBNET_ELEMENT_TYPE, *LPDHCP_SUBNET_ELEMENT_TYPE;
-=end
-  class DHCP_SUBNET_ELEMENT_TYPE
-    DhcpIpRanges = 0
-    DhcpSecondaryHosts = 1
-    DhcpReservedIps = 2
-    DhcpExcludedIpRanges = 3
-    DhcpIpRangesDhcpOnly = 4
-    DhcpIpRangesDhcpBootp = 5
-    DhcpIpRangesBootpOnly = 6
-  end
-
-=begin
   typedef struct _DHCP_SUBNET_ELEMENT_DATA_V4 {
     DHCP_SUBNET_ELEMENT_TYPE ElementType;
     union {

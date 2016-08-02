@@ -13,25 +13,6 @@ module DhcpsApi
            :reserved_ip_subnet_address, :uint32
   end
 
-
-  #
-  # DHCP_OPTION_SCOPE_TYPE enumeration defines the set of possible DHCP option scopes.
-  #
-  # @see https://msdn.microsoft.com/en-us/library/windows/desktop/aa363363(v=vs.85).aspx
-  #
-  class DHCP_OPTION_SCOPE_TYPE
-    # The DHCP options correspond to the default scope.
-    DhcpDefaultOptions = 0
-    # The DHCP options correspond to the global scope.
-    DhcpGlobalOptions = 1
-    # The DHCP options correspond to a specific subnet scope.
-    DhcpSubnetOptions = 2
-    # The DHCP options correspond to a reserved IP address.
-    DhcpReservedOptions = 3
-    # The DHCP options correspond to a multicast scope.
-    DhcpMScopeOptions = 4
-  end
-
   #
   # DHCP_RESERVED_SCOPE_UNION describes a DHCP scope.
   #

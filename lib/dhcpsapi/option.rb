@@ -1,16 +1,5 @@
 module DhcpsApi
 =begin
-  typedef enum _DHCP_OPTION_TYPE {
-    DhcpUnaryElementTypeOption,
-    DhcpArrayTypeOption
-  } DHCP_OPTION_TYPE, *LPDHCP_OPTION_TYPE;
-=end
-  class DHCP_OPTION_TYPE
-    DhcpUnaryElementTypeOption = 0
-    DhcpArrayTypeOption = 1
-  end
-
-=begin
   typedef struct _DHCP_OPTION {
     DHCP_OPTION_ID   OptionID;
     LPWSTR           OptionName;

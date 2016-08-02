@@ -1,5 +1,6 @@
 require 'ffi'
 require 'dhcpsapi/ffi'
+require 'dhcpsapi/enums'
 require 'dhcpsapi/version'
 require 'dhcpsapi/common'
 require 'dhcpsapi/common_data_structs'

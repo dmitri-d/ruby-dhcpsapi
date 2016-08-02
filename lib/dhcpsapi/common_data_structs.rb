@@ -1,32 +1,4 @@
 module DhcpsApi
-  DHCP_FLAGS_OPTION_IS_VENDOR = 3
-
-  class ClientType
-    # The client's dynamic IP address protocol is unknown.
-    CLIENT_TYPE_UNSPECIFIED = 0x0
-    # The client uses DHCP for dynamic IP address service.
-    CLIENT_TYPE_DHCP = 0x1
-    # The client uses BOOTP for dynamic IP address service.
-    CLIENT_TYPE_BOOTP = 0x2
-    # The client can use either DHCP or BOOTP for dynamic IP address service.
-    CLIENT_TYPE_BOTH =( CLIENT_TYPE_DHCP | CLIENT_TYPE_BOOTP )
-    # The client does not use a supported dynamic IP address service.
-    CLIENT_TYPE_NONE = 0x64
-    CLIENT_TYPE_RESERVATION_FLAG = 0x4
-  end
-
-  class DHCP_FORCE_FLAG
-    # The operation deletes all client records affected by the element, and then deletes the element.
-    DhcpFullForce = 0
-    # The operation only deletes the subnet element, leaving intact any client records impacted by the change.
-    DhcpNoForce = 1
-    # The operation deletes all client records affected by the element, and then deletes the element from the DHCP server.
-    # But it does not delete any registered DNS records associated with the deleted client records from the DNS server.
-    # This flag is only valid when passed to DhcpDeleteSubnet.
-    # Note that the minimum server OS requirement for this value is Windows Server 2012 R2 with KB 3100473 installed.
-    DhcpFailoverForce = 2
-  end
-
 =begin
   typedef struct _DHCP_IP_ARRAY {
     DWORD             NumElements;
@@ -129,19 +101,6 @@ module DhcpsApi
   end
 
 =begin
-  typedef enum _DHCP_CLIENT_SEARCH_TYPE {
-    DhcpClientIpAddress,
-        DhcpClientHardwareAddress,
-        DhcpClientName
-  } DHCP_SEARCH_INFO_TYPE, *LPDHCP_SEARCH_INFO_TYPE;
-=end
-  class DHCP_SEARCH_INFO_TYPE
-    DhcpClientIpAddress = 0
-    DhcpClientHardwareAddress = 1
-    DhcpClientName = 2
-  end
-
-=begin
   typedef struct _DHCP_CLIENT_SEARCH_INFO {
     DHCP_SEARCH_INFO_TYPE SearchType;
     union {
@@ -159,37 +118,6 @@ module DhcpsApi
   class DHCP_SEARCH_INFO < DHCPS_Struct
     layout :search_type, :uint32, # see DHCP_SEARCH_INFO_TYPE
            :search_info, SEARCH_INFO_UNION
-  end
-
-=begin
-  typedef enum _DHCP_OPTION_DATA_TYPE {
-    DhcpByteOption,
-    DhcpWordOption,
-    DhcpDWordOption,
-    DhcpDWordDWordOption,
-    DhcpIpAddressOption,
-    DhcpStringDataOption,
-    DhcpBinaryDataOption,
-    DhcpEncapsulatedDataOption,
-    DhcpIpv6AddressOption
-  } DHCP_OPTION_DATA_TYPE, *LPDHCP_OPTION_DATA_TYPE;
-=end
-  class DHCP_OPTION_DATA_TYPE
-    DhcpByteOption = 0
-    DhcpWordOption = 1
-    DhcpDWordOption = 2
-    # The option data is stored as a DWORD_DWORD value.
-    DhcpDWordDWordOption = 3
-    # The option data is an IP address, stored as a DHCP_IP_ADDRESS value (DWORD).
-    DhcpIpAddressOption = 4
-    # The option data is stored as a Unicode string.
-    DhcpStringDataOption = 5
-    # The option data is stored as a DHCP_BINARY_DATA structure.
-    DhcpBinaryDataOption = 6
-    # The option data is encapsulated and stored as a DHCP_BINARY_DATA structure.
-    DhcpEncapsulatedDataOption = 7
-    # The option data is stored as a Unicode string.
-    DhcpIpv6AddressOption = 8
   end
 
   class DWORD_DWORD < DHCPS_Struct
