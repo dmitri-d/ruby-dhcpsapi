@@ -1,78 +1,4 @@
 module DhcpsApi
-=begin
-  typedef struct _DHCP_SUBNET_INFO {
-    DHCP_IP_ADDRESS   SubnetAddress;
-    DHCP_IP_MASK      SubnetMask;
-    LPWSTR            SubnetName;
-    LPWSTR            SubnetComment;
-    DHCP_HOST_INFO    PrimaryHost;
-    DHCP_SUBNET_STATE SubnetState;
-  } DHCP_SUBNET_INFO, *LPDHCP_SUBNET_INFO;
-=end
-  class DHCP_SUBNET_INFO < DHCPS_Struct
-    layout :subnet_address, :uint32,
-           :subnet_mask, :uint32,
-           :subnet_name, :pointer,
-           :subnet_comment, :pointer,
-           :primary_host, DHCP_HOST_INFO,
-           :subnet_state, :uint32
-
-    ruby_struct_attr :uint32_to_ip, :subnet_address, :subnet_mask
-    ruby_struct_attr :to_string, :subnet_name, :subnet_comment
-  end
-
-=begin
-  typedef struct _DHCP_IP_RANGE {
-    DHCP_IP_ADDRESS StartAddress;
-    DHCP_IP_ADDRESS EndAddress;
-  } DHCP_IP_RANGE, *LPDHCP_IP_RANGE;
-=end
-  class DHCP_IP_RANGE < DHCPS_Struct
-    layout :start_address, :uint32,
-           :end_address, :uint32
-
-    ruby_struct_attr :uint32_to_ip, :subnet_address, :subnet_mask
-  end
-
-=begin
-  DWORD DHCP_API_FUNCTION DhcpEnumSubnets(
-    _In_    DHCP_CONST WCHAR   *ServerIpAddress,
-    _Inout_ DHCP_RESUME_HANDLE *ResumeHandle,
-    _In_    DWORD              PreferredMaximum,
-    _Out_   LPDHCP_IP_ARRAY    *EnumInfo,
-    _Out_   DWORD              *ElementsRead,
-    _Out_   DWORD              *ElementsTotal
-  );
-=end
-  attach_function :DhcpEnumSubnets, [:pointer, :pointer, :uint32, :pointer, :pointer, :pointer], :uint32
-
-=begin
-  DWORD DHCP_API_FUNCTION DhcpCreateSubnet(
-    _In_ DHCP_CONST WCHAR            *ServerIpAddress,
-    _In_ DHCP_IP_ADDRESS             SubnetAddress,
-    _In_ DHCP_CONST DHCP_SUBNET_INFO *SubnetInfo
-  );
-=end
-  attach_function :DhcpCreateSubnet, [:pointer, :uint32, :pointer], :uint32
-
-=begin
-  DWORD DHCP_API_FUNCTION DhcpDeleteSubnet(
-    _In_ DHCP_CONST WCHAR *ServerIpAddress,
-    _In_ DHCP_IP_ADDRESS  SubnetAddress,
-    _In_ DHCP_FORCE_FLAG  ForceFlag
-  );
-=end
-  attach_function :DhcpDeleteSubnet, [:pointer, :uint32, :uint32], :uint32
-
-=begin
-  DWORD DHCP_API_FUNCTION DhcpGetSubnetInfo(
-    _In_  DHCP_CONST WCHAR   *ServerIpAddress,
-    _In_  DHCP_IP_ADDRESS    SubnetAddress,
-    _Out_ LPDHCP_SUBNET_INFO *SubnetInfo
-  );
-=end
-  attach_function :DhcpGetSubnetInfo, [:pointer, :uint32, :pointer], :uint32
-
   module Subnet
     include CommonMethods
 
@@ -92,14 +18,14 @@ module DhcpsApi
       subnet_info[:subnet_name] = FFI::MemoryPointer.from_string(to_wchar_string(subnet_name))
       subnet_info[:subnet_comment] = FFI::MemoryPointer.from_string(to_wchar_string(subnet_comment))
 
-      error = DhcpsApi.DhcpCreateSubnet(to_wchar_string(server_ip_address), ip_to_uint32(subnet_address), subnet_info.pointer)
+      error = DhcpsApi::Win2008::Subnet.DhcpCreateSubnet(to_wchar_string(server_ip_address), ip_to_uint32(subnet_address), subnet_info.pointer)
       raise DhcpsApi::Error.new("Error creating subnet.", error) if error != 0
 
       subnet_info.as_ruby_struct
     end
 
     def delete_subnet(subnet_address, force_flag = DhcpsApi::DHCP_FORCE_FLAG::DhcpNoForce)
-      error = DhcpsApi.DhcpDeleteSubnet(to_wchar_string(server_ip_address), ip_to_uint32(subnet_address), force_flag)
+      error = DhcpsApi::Win2008::Subnet.DhcpDeleteSubnet(to_wchar_string(server_ip_address), ip_to_uint32(subnet_address), force_flag)
       raise DhcpsApi::Error.new("Error deleting subnet.", error) if error != 0
     end
 
@@ -110,7 +36,7 @@ module DhcpsApi
       ip_range[:start_address] = ip_to_uint32(start_address)
       ip_range[:end_address] = ip_to_uint32(end_address)
 
-      error = DhcpsApi.DhcpAddSubnetElementV4(to_wchar_string(server_ip_address), ip_to_uint32(subnet_address), subnet_element.pointer)
+      error = DhcpsApi::Win2008::SubnetElement.DhcpAddSubnetElementV4(to_wchar_string(server_ip_address), ip_to_uint32(subnet_address), subnet_element.pointer)
       raise DhcpsApi::Error.new("Error adding a subnet range to '%s'." % [subnet_address], error) if error != 0
 
       subnet_element.as_ruby_struct
@@ -123,7 +49,7 @@ module DhcpsApi
       ip_range[:start_address] = ip_to_uint32(start_address)
       ip_range[:end_address] = ip_to_uint32(end_address)
 
-      error = DhcpsApi.DhcpRemoveSubnetElementV4(
+      error = DhcpsApi::Win2008::SubnetElement.DhcpRemoveSubnetElementV4(
           to_wchar_string(server_ip_address),
           ip_to_uint32(subnet_address),
           to_delete.pointer,
@@ -140,7 +66,7 @@ module DhcpsApi
     def dhcp_get_subnet_info(subnet_address)
       subnet_info_ptr_ptr = FFI::MemoryPointer.new(:pointer)
 
-      error = DhcpsApi.DhcpGetSubnetInfo(to_wchar_string(server_ip_address), subnet_address, subnet_info_ptr_ptr)
+      error = DhcpsApi::Win2008::Subnet.DhcpGetSubnetInfo(to_wchar_string(server_ip_address), subnet_address, subnet_info_ptr_ptr)
       if is_error?(error)
         unless (subnet_info_ptr_ptr.null? || (to_free = subnet_info_ptr_ptr.read_pointer).null?)
           free_memory(DhcpsApi::DHCP_SUBNET_INFO.new(to_free))
@@ -161,7 +87,7 @@ module DhcpsApi
       elements_read_ptr = FFI::MemoryPointer.new(:uint32).put_uint32(0, 0)
       elements_total_ptr = FFI::MemoryPointer.new(:uint32).put_uint32(0, 0)
 
-      error = DhcpsApi.DhcpEnumSubnets(to_wchar_string(server_ip_address), resume_handle_ptr, preferred_maximium, dhcp_ip_array_ptr_ptr, elements_read_ptr, elements_total_ptr)
+      error = DhcpsApi::Win2008::Subnet.DhcpEnumSubnets(to_wchar_string(server_ip_address), resume_handle_ptr, preferred_maximium, dhcp_ip_array_ptr_ptr, elements_read_ptr, elements_total_ptr)
       return empty_response if error == 259
       if is_error?(error)
         unless (dhcp_ip_array_ptr_ptr.null? || (to_free = dhcp_ip_array_ptr_ptr.read_pointer).null?)

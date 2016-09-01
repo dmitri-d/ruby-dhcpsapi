@@ -1,127 +1,4 @@
 module DhcpsApi
-=begin
-  typedef struct _DHCP_CLIENT_INFO_PB {
-    DHCP_IP_ADDRESS  ClientIpAddress;
-    DHCP_IP_MASK     SubnetMask;
-    DHCP_CLIENT_UID  ClientHardwareAddress;
-    LPWSTR           ClientName;
-    LPWSTR           ClientComment;
-    DATE_TIME        ClientLeaseExpires;
-    DHCP_HOST_INFO   OwnerHost;
-    BYTE             bClientType;
-    BYTE             AddressState;
-    QuarantineStatus Status;
-    DATE_TIME        ProbationEnds;
-    BOOL             QuarantineCapable;
-    DWORD            FilterStatus;
-    LPWSTR           PolicyName;
-  } DHCP_CLIENT_INFO_PB, *LPDHCP_CLIENT_INFO_PB;
-=end
-  class DHCP_CLIENT_INFO_PB < DHCPS_Struct
-    layout  :client_ip_address, :uint32,
-            :subnet_mask, :uint32,
-            :client_hardware_address, DHCP_CLIENT_UID,
-            :client_name, :pointer,
-            :client_comment, :pointer,
-            :client_lease_expires, DATE_TIME,
-            :owner_host, DHCP_HOST_INFO,
-            :b_client_type, :uint8, # see ClientType
-            :address_state, :uint8,
-            :status, :uint32,
-            :probation_ends, DATE_TIME,
-            :quarantine_capable, :bool,
-            :filter_status, :uint32,
-            :policy_name, :pointer
-
-    ruby_struct_attr :uint32_to_ip, :client_ip_address, :subnet_mask
-    ruby_struct_attr :dhcp_client_uid_to_mac, :client_hardware_address
-    ruby_struct_attr :to_string, :client_name, :client_comment, :policy_name
-  end
-
-=begin
-  typedef struct _DHCP_CLIENT_INFO_V4 {
-    DHCP_IP_ADDRESS ClientIpAddress;
-    DHCP_IP_MASK    SubnetMask;
-    DHCP_CLIENT_UID ClientHardwareAddress;
-    LPWSTR          ClientName;
-    LPWSTR          ClientComment;
-    DATE_TIME       ClientLeaseExpires;
-    DHCP_HOST_INFO  OwnerHost;
-    BYTE            bClientType;
-  } DHCP_CLIENT_INFO_V4, *LPDHCP_CLIENT_INFO_V4;
-=end
-  class DHCP_CLIENT_INFO_V4 < DHCPS_Struct
-    layout :client_ip_address, :uint32,
-           :subnet_mask, :uint32,
-           :client_hardware_address, DHCP_CLIENT_UID,
-           :client_name, :pointer,
-           :client_comment, :pointer,
-           :client_lease_expires, DATE_TIME,
-           :owner_host, DHCP_HOST_INFO,
-           :client_type, :uint8 # see ClientType
-
-    ruby_struct_attr :uint32_to_ip, :client_ip_address, :subnet_mask
-    ruby_struct_attr :dhcp_client_uid_to_mac, :client_hardware_address
-    ruby_struct_attr :to_string, :client_name, :client_comment
-  end
-
-=begin
-typedef struct _DHCP_CLIENT_INFO_PB_ARRAY {
-  DWORD                 NumElements;
-  LPDHCP_CLIENT_INFO_PB *Clients;
-} DHCP_CLIENT_INFO_PB_ARRAY, *LPDHCP_CLIENT_INFO_PB_ARRAY;
-=end
-  class DHCP_CLIENT_INFO_PB_ARRAY < DHCPS_Struct
-    layout :num_elements, :uint32,
-           :clients, :pointer
-  end
-
-=begin
-  DWORD DhcpCreateClientInfoV4(
-    _In_ DHCP_CONST WCHAR                 *ServerIpAddress,
-    _In_ LPDHCP_CONST DHCP_CLIENT_INFO_V4 ClientInfo
-  );
-=end
-  attach_function :DhcpCreateClientInfoV4, [:pointer, :pointer], :uint32
-
-=begin
-  DWORD DhcpSetClientInfoV4(
-    _In_ DHCP_CONST WCHAR               *ServerIpAddress,
-    _In_ DHCP_CONST DHCP_CLIENT_INFO_V4 *ClientInfo
-  );
-=end
-  attach_function :DhcpSetClientInfoV4, [:pointer, :pointer], :uint32
-
-=begin
-  DWORD DHCP_API_FUNCTION DhcpGetClientInfoV4(
-    _In_  DHCP_CONST WCHAR            ServerIpAddress,
-    _In_  DHCP_CONST DHCP_SEARCH_INFO SearchInfo,
-    _Out_ LPDHCP_CLIENT_INFO_V4       *ClientInfo
-  );
-=end
-  attach_function :DhcpGetClientInfoV4, [:pointer, DHCP_SEARCH_INFO.by_value, :pointer], :uint32
-
-=begin
-  DWORD DHCP_API_FUNCTION DhcpV4EnumSubnetClients(
-    _In_opt_ DHCP_CONST WCHAR            *ServerIpAddress,
-    _In_     DHCP_IP_ADDRESS             SubnetAddress,
-    _Inout_  DHCP_RESUME_HANDLE          *ResumeHandle,
-    _In_     DWORD                       PreferredMaximum,
-    _Out_    LPDHCP_CLIENT_INFO_PB_ARRAY *ClientInfo,
-    _Out_    DWORD                       *ClientsRead,
-    _Out_    DWORD                       *ClientsTotal
-  );
-=end
-  attach_function :DhcpV4EnumSubnetClients, [:pointer, :uint32, :pointer, :uint32, :pointer, :pointer, :pointer], :uint32
-
-=begin
-  DWORD DHCP_API_FUNCTION DhcpDeleteClientInfo(
-    _In_ DHCP_CONST WCHAR            *ServerIpAddress,
-    _In_ DHCP_CONST DHCP_SEARCH_INFO *ClientInfo
-  );
-=end
-  attach_function :DhcpDeleteClientInfo, [:pointer, :pointer], :uint32
-
   module Client
     def list_clients(subnet_address)
       items, _ = retrieve_items(:dhcp_v4_enum_subnet_clients, subnet_address, 1024, 0)
@@ -143,7 +20,7 @@ typedef struct _DHCP_CLIENT_INFO_PB_ARRAY {
       to_create[:client_lease_expires][:dw_high_date_time] = 0
       to_create[:client_type] = client_type
 
-      error = DhcpsApi.DhcpCreateClientInfoV4(to_wchar_string(server_ip_address), to_create.pointer)
+      error = DhcpsApi::Win2008::Client.DhcpCreateClientInfoV4(to_wchar_string(server_ip_address), to_create.pointer)
       raise DhcpsApi::Error.new("Error creating client.", error) if error != 0
 
       to_create.as_ruby_struct
@@ -164,7 +41,7 @@ typedef struct _DHCP_CLIENT_INFO_PB_ARRAY {
       to_modify[:client_lease_expires][:dw_high_date_time] = 0
       to_modify[:client_type] = client_type
 
-      error = DhcpsApi.DhcpSetClientInfoV4(to_wchar_string(server_ip_address), to_modify.pointer)
+      error = DhcpsApi::Win2008::Client.DhcpSetClientInfoV4(to_wchar_string(server_ip_address), to_modify.pointer)
       raise DhcpsApi::Error.new("Error modifying client.", error) if error != 0
 
       to_modify.as_ruby_struct
@@ -203,7 +80,7 @@ typedef struct _DHCP_CLIENT_INFO_PB_ARRAY {
       search_info[:search_type] = DhcpsApi::DHCP_SEARCH_INFO_TYPE::DhcpClientHardwareAddress
       search_info[:search_info][:client_hardware_address].initialize_with_subnet_and_mac_addresses(subnet_address, client_mac_address)
 
-      error = DhcpsApi.DhcpDeleteClientInfo(to_wchar_string(server_ip_address), search_info.pointer)
+      error = DhcpsApi::Win2008::Client.DhcpDeleteClientInfo(to_wchar_string(server_ip_address), search_info.pointer)
       raise DhcpsApi::Error.new("Error deleting client.", error) if error != 0
     end
 
@@ -212,7 +89,7 @@ typedef struct _DHCP_CLIENT_INFO_PB_ARRAY {
       search_info[:search_type] = DhcpsApi::DHCP_SEARCH_INFO_TYPE::DhcpClientIpAddress
       search_info[:search_info][:client_ip_address] = ip_to_uint32(client_ip_address)
 
-      error = DhcpsApi.DhcpDeleteClientInfo(to_wchar_string(server_ip_address), search_info.pointer)
+      error = DhcpsApi::Win2008::Client.DhcpDeleteClientInfo(to_wchar_string(server_ip_address), search_info.pointer)
       raise DhcpsApi::Error.new("Error deleting client.", error) if error != 0
     end
 
@@ -221,7 +98,7 @@ typedef struct _DHCP_CLIENT_INFO_PB_ARRAY {
       search_info[:search_type] = DhcpsApi::DHCP_SEARCH_INFO_TYPE::DhcpClientName
       search_info[:search_info][:client_name] = FFI::MemoryPointer.from_string(to_wchar_string(client_name))
 
-      error = DhcpsApi.DhcpDeleteClientInfo(to_wchar_string(server_ip_address), search_info.pointer)
+      error = DhcpsApi::Win2008::Client.DhcpDeleteClientInfo(to_wchar_string(server_ip_address), search_info.pointer)
       raise DhcpsApi::Error.new("Error deleting client.", error) if error != 0
     end
 
@@ -229,7 +106,7 @@ typedef struct _DHCP_CLIENT_INFO_PB_ARRAY {
     def get_client(search_info, client_id)
       client_info_ptr_ptr = FFI::MemoryPointer.new(:pointer)
 
-      error = DhcpsApi.DhcpGetClientInfoV4(to_wchar_string(server_ip_address), search_info.pointer, client_info_ptr_ptr)
+      error = DhcpsApi::Win2008::Client.DhcpGetClientInfoV4(to_wchar_string(server_ip_address), search_info.pointer, client_info_ptr_ptr)
       if is_error?(error)
         unless (client_info_ptr_ptr.null? || (to_free = client_info_ptr_ptr.read_pointer).null?)
           free_memory(DhcpsApi::DHCP_CLIENT_INFO_V4.new(to_free))
@@ -250,7 +127,7 @@ typedef struct _DHCP_CLIENT_INFO_PB_ARRAY {
       elements_read_ptr = FFI::MemoryPointer.new(:uint32).put_uint32(0, 0)
       elements_total_ptr = FFI::MemoryPointer.new(:uint32).put_uint32(0, 0)
 
-      error = DhcpsApi.DhcpV4EnumSubnetClients(
+      error = DhcpsApi::Win2012::Client.DhcpV4EnumSubnetClients(
           to_wchar_string(server_ip_address), ip_to_uint32(subnet_address), resume_handle_ptr, preferred_maximum,
           client_info_ptr_ptr, elements_read_ptr, elements_total_ptr)
       return empty_response if error == 259

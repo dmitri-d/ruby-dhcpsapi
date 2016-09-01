@@ -1,64 +1,4 @@
 module DhcpsApi
-=begin
-  typedef struct _DHCP_IP_RESERVATION_INFO {
-    DHCP_IP_ADDRESS ReservedIpAddress;
-    DHCP_CLIENT_UID ReservedForClient;
-    LPWSTR          ReservedClientName;
-    LPWSTR          ReservedClientDesc;
-    BYTE            bAllowedClientTypes;
-    BYTE            fOptionsPresent;
-  } DHCP_IP_RESERVATION_INFO, *LPDHCP_IP_RESERVATION_INFO;
-=end
-  class DHCP_IP_RESERVATION_INFO < DHCPS_Struct
-    layout :reserved_ip_address, :uint32,
-           :reserved_for_client, DHCP_CLIENT_UID,
-           :reserved_client_name, :pointer,
-           :reserved_client_desc, :pointer,
-           :b_allowed_client_types, :uint8, # see ClientType
-           :f_options_present, :uint8
-
-    ruby_struct_attr :uint32_to_ip, :reserved_ip_address
-    ruby_struct_attr :dhcp_client_uid_to_mac, :reserved_for_client
-    ruby_struct_attr :to_string, :reserved_client_name, :reserved_client_desc
-  end
-
-=begin
-  typedef struct _DHCP_RESERVATION_INFO_ARRAY {
-    DWORD                      NumElements;
-    LPDHCP_IP_RESERVATION_INFO *Elements;
-  } DHCP_RESERVATION_INFO_ARRAY, *LPDHCP_RESERVATION_INFO_ARRAY;
-=end
-  class DHCP_RESERVATION_INFO_ARRAY < DHCPS_Struct
-    layout :num_elements, :uint32,
-           :elements, :pointer
-  end
-
-=begin
-  typedef struct _DHCP_IP_RESERVATION_V4 {
-    DHCP_IP_ADDRESS ReservedIpAddress;
-    DHCP_CLIENT_UID *ReservedForClient;
-    BYTE            bAllowedClientTypes;
-  } DHCP_IP_RESERVATION_V4, *LPDHCP_IP_RESERVATION_V4;
-=end
-  class DHCP_IP_RESERVATION_V4 < DHCPS_Struct
-    layout :reserved_ip_address, :uint32,
-           :reserved_for_client, :pointer,
-           :b_allowed_client_types, :uint8 # see ClientType
-  end
-
-=begin
-  DWORD DHCP_API_FUNCTION DhcpV4EnumSubnetReservations(
-    _In_opt_ DHCP_CONST WCHAR              *ServerIpAddress,
-    _In_     DHCP_IP_ADDRESS               SubnetAddress,
-    _Inout_  DHCP_RESUME_HANDLE            *ResumeHandle,
-    _In_     DWORD                         PreferredMaximum,
-    _Out_    LPDHCP_RESERVATION_INFO_ARRAY *EnumElementInfo,
-    _Out_    DWORD                         *ElementsRead,
-    _Out_    DWORD                         *ElementsTotal
-  );
-=end
-  attach_function :DhcpV4EnumSubnetReservations, [:pointer, :uint32, :pointer, :uint32, :pointer, :pointer, :pointer], :uint32
-
   module Reservation
     include CommonMethods
 
@@ -80,7 +20,7 @@ module DhcpsApi
       mask_as_octets = reservation_subnet_mask.split('.').map {|octet| octet.to_i}
       subnet_address = (0..3).inject([]) {|all, i| all << (ip_as_octets[i] & mask_as_octets[i])}.join('.')
 
-      error = DhcpsApi.DhcpAddSubnetElementV4(to_wchar_string(server_ip_address), ip_to_uint32(subnet_address), subnet_element.pointer)
+      error = DhcpsApi::Win2008::SubnetElement.DhcpAddSubnetElementV4(to_wchar_string(server_ip_address), ip_to_uint32(subnet_address), subnet_element.pointer)
       raise DhcpsApi::Error.new("Error creating reservation.", error) if error != 0
 
       modify_client(reservation_ip, reservation_subnet_mask, reservation_mac, reservation_name, reservation_comment, 0, DhcpsApi::ClientType::CLIENT_TYPE_NONE)
@@ -97,7 +37,7 @@ module DhcpsApi
       reserved_ip[:reserved_for_client] = DhcpsApi::DHCP_CLIENT_UID.from_mac_address(reservation_mac).pointer
       reserved_ip[:b_allowed_client_types] = DhcpsApi::ClientType::CLIENT_TYPE_NONE
 
-      error = DhcpsApi.DhcpRemoveSubnetElementV4(
+      error = DhcpsApi::Win2008::SubnetElement.DhcpRemoveSubnetElementV4(
           to_wchar_string(server_ip_address),
           ip_to_uint32(subnet_address),
           to_delete.pointer,
@@ -139,7 +79,7 @@ module DhcpsApi
       elements_read_ptr = FFI::MemoryPointer.new(:uint32).put_uint32(0, 0)
       elements_total_ptr = FFI::MemoryPointer.new(:uint32).put_uint32(0, 0)
 
-      error = DhcpsApi.DhcpV4EnumSubnetReservations(
+      error = DhcpsApi::Win2012::Reservation.DhcpV4EnumSubnetReservations(
           to_wchar_string(server_ip_address), ip_to_uint32(subnet_address), resume_handle_ptr, preferred_maximum,
           enum_element_info_ptr_ptr, elements_read_ptr, elements_total_ptr)
       return empty_response if error == 259
