@@ -63,17 +63,10 @@ module DhcpsApi
     end
   end
 
-=begin
-VOID DHCP_API_FUNCTION DhcpRpcFreeMemory(
-   PVOID BufferPointer
-);
-=end
-  attach_function :DhcpRpcFreeMemory, [:pointer], :void
-
 # @private
   module CommonMethods
     def free_memory(a_struct)
-      DhcpsApi.DhcpRpcFreeMemory(a_struct.pointer)
+      DhcpsApi::Win2008::Common.DhcpRpcFreeMemory(a_struct.pointer)
     end
 
     def retrieve_items(method_to_call, *args)

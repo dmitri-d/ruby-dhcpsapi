@@ -7,7 +7,7 @@ Gem::Specification.new do |gem|
   gem.email                 = 'dmitri@appliedlogic.ca'
   gem.description           = 'Ruby wrappers for MS DHCP api'
   gem.summary               = 'Ruby wrappers for MS DHCP api'
-  gem.homepage              = "https://github.com/witlessbird/ruby-dhcpsapi"
+  gem.homepage              = "https://github.com/witlessbird/ruby-dhcpsapi_win2008"
   gem.license               = "Apache License, v2.0"
 
   gem.files                 = %w(LICENSE.txt README.md Rakefile) + Dir["lib/**/*"]
@@ -17,6 +17,6 @@ Gem::Specification.new do |gem|
 
   gem.add_dependency 'ffi'
   gem.add_development_dependency 'rake'
-  gem.add_development_dependency 'minitest'
+  gem.add_development_dependency 'minitest', '~> 4.3'
   gem.add_development_dependency 'yard'
 end

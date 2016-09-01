@@ -1,78 +1,4 @@
 module DhcpsApi
-  #
-  # DHCP_CLASS_INFO data structure describes an option class.
-  #
-  # Available fields:
-  # :class_name [String],
-  # :class_comment [String],
-  # :is_vendor [Boolean],
-  # :flags [Fixnum],
-  # :class_data [String]
-  #
-  # @see https://msdn.microsoft.com/en-us/library/windows/desktop/dd897569(v=vs.85).aspx
-  #
-  class DHCP_CLASS_INFO < DHCPS_Struct
-    layout :class_name, :pointer,
-           :class_comment, :pointer,
-           :class_data_length, :uint32,
-           :is_vendor, :bool,
-           :flags, :uint32,
-           :class_data, :pointer
-
-    ruby_struct_attr :to_string, :class_name, :class_comment, :policy_name
-    ruby_struct_attr :class_data_as_string, :class_data
-
-    private
-    def class_data_as_string(unused)
-      self[:class_data].read_array_of_type(:uint8, :read_uint8, self[:class_data_length])
-    end
-  end
-
-  #
-  # DHCP_CLASS_INFO data structure describes an array of option classes.
-  #
-  # Available fields:
-  # :num_elements [Fixnum],
-  # :classes [Array<Hash>]
-  #
-  # @see https://msdn.microsoft.com/en-us/library/windows/desktop/dd897570(v=vs.85).aspx
-  #
-  class DHCP_CLASS_INFO_ARRAY < DHCPS_Struct
-    layout :num_elements, :uint32,
-           :classes, :pointer
-  end
-
-=begin
-  DWORD DhcpEnumClasses(
-    _In_    LPWSTR                  ServerIpAddress,
-    _In_    DWORD                   ReservedMustBeZero,
-    _Inout_  DHCP_RESUME_HANDLE     *ResumeHandle,
-    _In_    DWORD                   PreferredMaximum,
-    _Out_   LPDHCP_CLASS_INFO_ARRAY *ClassInfoArray,
-    _Out_   DWORD                   *nRead,
-    _Out_   DWORD                   *nTotal
-  );
-=end
-  attach_function :DhcpEnumClasses, [:pointer, :uint32, :pointer, :uint32, :pointer, :pointer, :pointer], :uint32
-
-=begin
-  DWORD DhcpCreateClass(
-    _In_ LPWSTR            ServerIpAddress,
-    _In_ DWORD             ReservedMustBeZero,
-    _In_ LPDHCP_CLASS_INFO ClassInfo
-  );
-=end
-  attach_function :DhcpCreateClass, [:pointer, :uint32, :pointer], :uint32
-
-=begin
-  DWORD DhcpDeleteClass(
-    _In_ LPWSTR ServerIpAddress,
-    _In_ DWORD  ReservedMustBeZero,
-    _In_ LPWSTR ClassName
-  );
-=end
-  attach_function :DhcpDeleteClass, [:pointer, :uint32, :pointer], :uint32
-
   module Class
     # Returns option classes available on the server as a List of DHCP_CLASS_INFOs represented as Hashmaps.
     #
@@ -111,7 +37,7 @@ module DhcpsApi
       to_create[:class_data] = FFI::MemoryPointer.from_string(to_wchar_string(data))
       to_create[:class_data_length] = to_wchar_string(data).bytes.size
 
-      error = DhcpsApi.DhcpCreateClass(to_wchar_string(server_ip_address), 0, to_create.pointer)
+      error = DhcpsApi::Win2008::Class.DhcpCreateClass(to_wchar_string(server_ip_address), 0, to_create.pointer)
       raise DhcpsApi::Error.new("Error creating class.", error) if error != 0
 
       to_create.as_ruby_struct
@@ -128,7 +54,7 @@ module DhcpsApi
     # @return [void]
     #
     def delete_class(class_name)
-      error = DhcpsApi.DhcpDeleteClass(to_wchar_string(server_ip_address), 0, to_wchar_string(class_name))
+      error = DhcpsApi::Win2008::Class.DhcpDeleteClass(to_wchar_string(server_ip_address), 0, to_wchar_string(class_name))
       raise DhcpsApi::Error.new("Error deleting class.", error) if error != 0
     end
 
@@ -139,7 +65,7 @@ module DhcpsApi
       elements_read_ptr = FFI::MemoryPointer.new(:uint32).put_uint32(0, 0)
       elements_total_ptr = FFI::MemoryPointer.new(:uint32).put_uint32(0, 0)
 
-      error = DhcpsApi.DhcpEnumClasses(
+      error = DhcpsApi::Win2008::Class.DhcpEnumClasses(
           to_wchar_string(server_ip_address), 0, resume_handle_ptr, preferred_maximum,
           class_info_ptr_ptr, elements_read_ptr, elements_total_ptr)
 
