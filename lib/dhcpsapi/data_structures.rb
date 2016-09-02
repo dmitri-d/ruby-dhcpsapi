@@ -292,18 +292,21 @@ module DhcpsApi
            :classes, :pointer
   end
 
-=begin
-  typedef struct _DHCP_CLIENT_INFO_V4 {
-    DHCP_IP_ADDRESS ClientIpAddress;
-    DHCP_IP_MASK    SubnetMask;
-    DHCP_CLIENT_UID ClientHardwareAddress;
-    LPWSTR          ClientName;
-    LPWSTR          ClientComment;
-    DATE_TIME       ClientLeaseExpires;
-    DHCP_HOST_INFO  OwnerHost;
-    BYTE            bClientType;
-  } DHCP_CLIENT_INFO_V4, *LPDHCP_CLIENT_INFO_V4;
-=end
+  #
+  # DHCP_CLIENT_INFO_V4 defines a client information record used by the DHCP server.
+  #
+  # Available fields:
+  # :client_ip_address [String],
+  # :subnet_mask [String],
+  # :client_hardware_address [String],
+  # :client_name [String],
+  # :client_comment [String],
+  # :client_lease_expires [Date],
+  # :owner_host [DHCP_HOST_INFO],
+  # :client_type, [Fixnum]
+  #
+  # @see https://msdn.microsoft.com/en-us/library/windows/desktop/dd897579(v=vs.85).aspx
+  #
   class DHCP_CLIENT_INFO_V4 < DHCPS_Struct
     layout :client_ip_address, :uint32,
            :subnet_mask, :uint32,
@@ -317,6 +320,23 @@ module DhcpsApi
     ruby_struct_attr :uint32_to_ip, :client_ip_address, :subnet_mask
     ruby_struct_attr :dhcp_client_uid_to_mac, :client_hardware_address
     ruby_struct_attr :to_string, :client_name, :client_comment
+  end
+
+=begin
+  typedef struct _DHCP_CLIENT_INFO_ARRAY_V4 {
+    DWORD                 NumElements;
+    LPDHCP_CLIENT_INFO_V4 *Clients;
+  } DHCP_CLIENT_INFO_ARRAY_V4, *LPDHCP_CLIENT_INFO_ARRAY_V4;
+=end
+  class DHCP_CLIENT_INFO_ARRAY_V4 < DHCPS_Struct
+    layout :num_elements, :uint32,
+           :clients, :pointer
+
+    def as_ruby_struct
+      0.upto(self[:num_elements]-1).inject([]) do |all, offset|
+        all << DHCP_CLIENT_INFO_V4.new((self[:clients] + offset*FFI::Pointer.size).read_pointer).as_ruby_struct
+      end
+    end
   end
 
 =begin
@@ -568,24 +588,27 @@ typedef struct _DHCP_OPTION_ARRAY {
 # Data structures available in Win2012
 #
 
-=begin
-  typedef struct _DHCP_CLIENT_INFO_PB {
-    DHCP_IP_ADDRESS  ClientIpAddress;
-    DHCP_IP_MASK     SubnetMask;
-    DHCP_CLIENT_UID  ClientHardwareAddress;
-    LPWSTR           ClientName;
-    LPWSTR           ClientComment;
-    DATE_TIME        ClientLeaseExpires;
-    DHCP_HOST_INFO   OwnerHost;
-    BYTE             bClientType;
-    BYTE             AddressState;
-    QuarantineStatus Status;
-    DATE_TIME        ProbationEnds;
-    BOOL             QuarantineCapable;
-    DWORD            FilterStatus;
-    LPWSTR           PolicyName;
-  } DHCP_CLIENT_INFO_PB, *LPDHCP_CLIENT_INFO_PB;
-=end
+  #
+  # DHCP_CLIENT_INFO_V4 defines a client information record used by the DHCP server.
+  #
+  # Available fields:
+  # :client_ip_address [String],
+  # :subnet_mask [String],
+  # :client_hardware_address [String],
+  # :client_name [String],
+  # :client_comment [String],
+  # :client_lease_expires [Date],
+  # :owner_host [DHCP_HOST_INFO],
+  # :client_type, [Fixnum]
+  # :address_state, [Fixnum]
+  # :status, [Fixnum]
+  # :probation_ends, [Date]
+  # :quarantine_capable, [Boolean]
+  # :filter_status, [Fixnum]
+  # :policy_name, [String]
+  #
+  # @see https://msdn.microsoft.com/en-us/library/windows/desktop/hh404371(v=vs.85).aspx
+  #
   class DHCP_CLIENT_INFO_PB < DhcpsApi::DHCPS_Struct
     layout  :client_ip_address, :uint32,
             :subnet_mask, :uint32,

@@ -5,6 +5,19 @@ module DhcpsApi::Win2008
     ffi_convention :stdcall
 
 =begin
+  DWORD DHCP_API_FUNCTION DhcpEnumSubnetClientsV4(
+    _In_    DHCP_CONST WCHAR            *ServerIpAddress,
+    _In_    DHCP_IP_ADDRESS             SubnetAddress,
+    _Inout_ DHCP_RESUME_HANDLE          *ResumeHandle,
+    _In_    DWORD                       PreferredMaximum,
+    _Out_   LPDHCP_CLIENT_INFO_ARRAY_V4 *ClientInfo,
+    _Out_   DWORD                       *ClientsRead,
+    _Out_   DWORD                       *ClientsTotal
+  );
+=end
+    attach_function :DhcpEnumSubnetClientsV4, [:pointer, :uint32, :pointer, :uint32, :pointer, :pointer, :pointer], :uint32
+
+=begin
   DWORD DhcpCreateClientInfoV4(
     _In_ DHCP_CONST WCHAR                 *ServerIpAddress,
     _In_ LPDHCP_CONST DHCP_CLIENT_INFO_V4 ClientInfo

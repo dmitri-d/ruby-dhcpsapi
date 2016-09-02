@@ -1,5 +1,34 @@
 module DhcpsApi
   module Client
+    # Returns a a list of subnet clients (Windows 2008-compatible version).
+    #
+    # @example List subnet clients
+    #
+    # api.list_clients_2008('192.168.42.0')
+    #
+    # @param subnet_address [String] Subnet ip address
+    #
+    # @return [Array<Hash>]
+    #
+    # @see DHCP_CLIENT_INFO_V4 DHCP_CLIENT_INFO_V4 documentation for the list of available fields.
+    #
+    def list_clients_2008(subnet_address)
+      items, _ = retrieve_items(:dhcp_enum_subnet_clients_v4, subnet_address, 1024, 0)
+      items
+    end
+
+    # Returns a a list of subnet clients (Windows 2012-compatible version).
+    #
+    # @example List subnet clients
+    #
+    # api.list_clients('192.168.42.0')
+    #
+    # @param subnet_address [String] Subnet ip address
+    #
+    # @return [Array<Hash>]
+    #
+    # @see DHCP_CLIENT_INFO_PB DHCP_CLIENT_INFO_PB documentation for the list of available fields.
+    #
     def list_clients(subnet_address)
       items, _ = retrieve_items(:dhcp_v4_enum_subnet_clients, subnet_address, 1024, 0)
       items
@@ -119,6 +148,30 @@ module DhcpsApi
 
       free_memory(client_info)
       to_return
+    end
+
+    def dhcp_enum_subnet_clients_v4(subnet_address, preferred_maximum, resume_handle)
+      resume_handle_ptr = FFI::MemoryPointer.new(:uint32).put_uint32(0, resume_handle)
+      client_info_ptr_ptr = FFI::MemoryPointer.new(:pointer)
+      elements_read_ptr = FFI::MemoryPointer.new(:uint32).put_uint32(0, 0)
+      elements_total_ptr = FFI::MemoryPointer.new(:uint32).put_uint32(0, 0)
+
+      error = DhcpsApi::Win2008::Client.DhcpEnumSubnetClientsV4(
+          to_wchar_string(server_ip_address), ip_to_uint32(subnet_address), resume_handle_ptr, preferred_maximum,
+          client_info_ptr_ptr, elements_read_ptr, elements_total_ptr)
+      return empty_response if error == 259
+      if is_error?(error)
+        unless (client_info_ptr_ptr.null? || (to_free = client_info_ptr_ptr.read_pointer).null?)
+          free_memory(DhcpsApi::DHCP_CLIENT_INFO_ARRAY_V4.new(to_free))
+        end
+        raise DhcpsApi::Error.new("Error retrieving clients from subnet '%s'." % [subnet_address], error)
+      end
+
+      leases_array = DhcpsApi::DHCP_CLIENT_INFO_ARRAY_V4.new(client_info_ptr_ptr.read_pointer)
+      leases = leases_array.as_ruby_struct
+      free_memory(leases_array)
+
+      [leases, resume_handle_ptr.get_uint32(0), elements_read_ptr.get_uint32(0), elements_total_ptr.get_uint32(0)]
     end
 
     def dhcp_v4_enum_subnet_clients(subnet_address, preferred_maximum, resume_handle)
