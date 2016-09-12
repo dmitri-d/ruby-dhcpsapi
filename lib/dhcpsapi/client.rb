@@ -35,6 +35,25 @@ module DhcpsApi
     end
 
     # TODO: parse lease time and owner_host
+    # creates a new subnet client.
+    #
+    # @example create a new client
+    #
+    # api.create_client('192.168.42.42', '255.255.255.0', '00:01:02:03:04:05', 'test-client', 'test client comment', 0)
+    #
+    # @param client_ip_address [String] Client ip address
+    # @param client_subnet_mask [String] Client subnet mask
+    # @param client_mac_address [String] Client hardware address
+    # @param client_name [String] Client name
+    # @param client_comment [String] Client comment
+    # @param lease_expires [Date] Client lease expiration date and time
+    # @param client_type [ClientType] Client type
+    #
+    # @return [Hash]
+    #
+    # @see DHCP_CLIENT_INFO_V4 DHCP_CLIENT_INFO_V4 documentation for the list of available fields.
+    # @see ClientType ClientType documentation for the list of available client types.
+    #
     def create_client(client_ip_address, client_subnet_mask, client_mac_address,
                       client_name, client_comment, lease_expires, client_type = DhcpsApi::ClientType::CLIENT_TYPE_BOTH)
       to_create = DhcpsApi::DHCP_CLIENT_INFO_V4.new
@@ -56,6 +75,25 @@ module DhcpsApi
     end
 
     # TODO: parse lease time and owner_host
+    # Modifies an existing subnet client.
+    #
+    # @example modify a client
+    #
+    # api.modify_client('192.168.42.42', '255.255.255.0', '00:01:02:03:04:05', 'test-client', 'test client comment', 0)
+    #
+    # @param client_ip_address [String] Client ip address
+    # @param client_subnet_mask [String] Client subnet mask
+    # @param client_mac_address [String] Client hardware address
+    # @param client_name [String] Client name
+    # @param client_comment [String] Client comment
+    # @param lease_expires [Date] Client lease expiration date and time
+    # @param client_type [ClientType] Client type
+    #
+    # @return [Hash]
+    #
+    # @see DHCP_CLIENT_INFO_V4 DHCP_CLIENT_INFO_V4 documentation for the list of available fields.
+    # @see ClientType ClientType documentation for the list of available client types.
+    #
     def modify_client(client_ip_address, client_subnet_mask, client_mac_address,
                       client_name, client_comment, lease_expires, client_type = DhcpsApi::ClientType::CLIENT_TYPE_BOTH)
       to_modify = DhcpsApi::DHCP_CLIENT_INFO_V4.new
@@ -80,6 +118,19 @@ module DhcpsApi
       uint32_to_ip(ip_to_uint32(client[:client_ip_address]) & ip_to_uint32(client[:subnet_mask]))
     end
 
+    # Retrieves subnet client using client mac address.
+    #
+    # @example retrieve a client
+    #
+    # api.get_client_by_mac_address('192.168.42.0', '00:01:02:03:04:05')
+    #
+    # @param subnet_address [String] Subnet address
+    # @param client_mac_address [String] Client hardware address
+    #
+    # @return [Hash]
+    #
+    # @see DHCP_CLIENT_INFO_V4 DHCP_CLIENT_INFO_V4 documentation for the list of available fields.
+    #
     def get_client_by_mac_address(subnet_address, client_mac_address)
       search_info = DhcpsApi::DHCP_SEARCH_INFO.new
       search_info[:search_type] = DhcpsApi::DHCP_SEARCH_INFO_TYPE::DhcpClientHardwareAddress
@@ -88,6 +139,18 @@ module DhcpsApi
       get_client(search_info, client_mac_address)
     end
 
+    # Retrieves subnet client using client ip address.
+    #
+    # @example retrieve a client
+    #
+    # api.get_client_by_ip_address('192.168.42.42')
+    #
+    # @param client_ip_address [String] Client ip address
+    #
+    # @return [Hash]
+    #
+    # @see DHCP_CLIENT_INFO_V4 DHCP_CLIENT_INFO_V4 documentation for the list of available fields.
+    #
     def get_client_by_ip_address(client_ip_address)
       search_info = DhcpsApi::DHCP_SEARCH_INFO.new
       search_info[:search_type] = DhcpsApi::DHCP_SEARCH_INFO_TYPE::DhcpClientIpAddress
@@ -96,6 +159,18 @@ module DhcpsApi
       get_client(search_info, client_ip_address)
     end
 
+    # Retrieves subnet client using client name.
+    #
+    # @example retrieve a client
+    #
+    # api.get_client_by_name('test-client')
+    #
+    # @param client_name [String] Client name
+    #
+    # @return [Hash]
+    #
+    # @see DHCP_CLIENT_INFO_V4 DHCP_CLIENT_INFO_V4 documentation for the list of available fields.
+    #
     def get_client_by_name(client_name)
       search_info = DhcpsApi::DHCP_SEARCH_INFO.new
       search_info[:search_type] = DhcpsApi::DHCP_SEARCH_INFO_TYPE::DhcpClientName
@@ -104,6 +179,17 @@ module DhcpsApi
       get_client(search_info, client_name)
     end
 
+    # Deletes subnet client using client mac address.
+    #
+    # @example delete a client
+    #
+    # api.delete_client_by_mac_address('192.168.42.0', '00:01:02:03:04:05')
+    #
+    # @param subnet_address [String] Subnet address
+    # @param client_mac_address [String] Client hardware address
+    #
+    # @return [void]
+    #
     def delete_client_by_mac_address(subnet_address, client_mac_address)
       search_info = DhcpsApi::DHCP_SEARCH_INFO.new
       search_info[:search_type] = DhcpsApi::DHCP_SEARCH_INFO_TYPE::DhcpClientHardwareAddress
@@ -113,6 +199,16 @@ module DhcpsApi
       raise DhcpsApi::Error.new("Error deleting client.", error) if error != 0
     end
 
+    # Deletes subnet client using client ip address.
+    #
+    # @example delete a client
+    #
+    # api.delete_client_by_ip_address('192.168.42.42')
+    #
+    # @param client_ip_address [String] Client ip address
+    #
+    # @return [void]
+    #
     def delete_client_by_ip_address(client_ip_address)
       search_info = DhcpsApi::DHCP_SEARCH_INFO.new
       search_info[:search_type] = DhcpsApi::DHCP_SEARCH_INFO_TYPE::DhcpClientIpAddress
@@ -122,6 +218,16 @@ module DhcpsApi
       raise DhcpsApi::Error.new("Error deleting client.", error) if error != 0
     end
 
+    # Deletes subnet client using client name.
+    #
+    # @example delete a client
+    #
+    # api.delete_client_by_name('test-client')
+    #
+    # @param client_name [String] Client name
+    #
+    # @return [void]
+    #
     def delete_client_by_name(client_name)
       search_info = DhcpsApi::DHCP_SEARCH_INFO.new
       search_info[:search_type] = DhcpsApi::DHCP_SEARCH_INFO_TYPE::DhcpClientName

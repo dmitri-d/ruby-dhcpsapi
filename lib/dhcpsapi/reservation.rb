@@ -2,11 +2,39 @@ module DhcpsApi
   module Reservation
     include CommonMethods
 
+    # Lists subnet reservations.
+    #
+    # @example List subnet reservations
+    #
+    # api.list_reservations('192.168.42.0')
+    #
+    # @param reservation_ip [String] Reservation ip address
+    #
+    # @return [Array<Hash>]
+    #
+    # @see DHCP_IP_RESERVATION_INFO DHCP_IP_RESERVATION_INFO documentation for the list of available fields.
+    #
     def list_reservations(subnet_address)
       items, _ = retrieve_items(:dhcp_v4_enum_subnet_reservations, subnet_address, 1024, 0)
       items
     end
 
+    # Creates a new reservation.
+    #
+    # @example Create a new reservation
+    #
+    # api.create_reservation('192.168.42.100', '255.255.255.0', '00:01:02:03:04:05', 'test_reservation', 'test reservation comment')
+    #
+    # @param reservation_ip [String] Reservation ip address
+    # @param reservation_subnet_mask [String] Reservation subnet mask
+    # @param reservation_mac [String] Reservation mac address
+    # @param reservation_name [String] Reservation name
+    # @param reservation_comment [String] Reservation comment
+    #
+    # @return [Hash]
+    #
+    # @see DHCP_IP_RESERVATION_INFO DHCP_IP_RESERVATION_INFO documentation for the list of available fields.
+    #
     def create_reservation(reservation_ip, reservation_subnet_mask, reservation_mac, reservation_name, reservation_comment = '')
       subnet_element = DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.new
       subnet_element[:element_type] = DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpReservedIps
@@ -28,6 +56,18 @@ module DhcpsApi
       subnet_element.as_ruby_struct
     end
 
+    # Deletes subnet reservations.
+    #
+    # @example Delete subnet reservations
+    #
+    # api.delete_reservations('192.168.42.42', '192.168.42.0', '00:01:02:03:04:05')
+    #
+    # @param reservation_ip [String] Reservation ip address
+    # @param subnet_address [String] Subnet ip address
+    # @param reservation_mac [String] Reservation mac address
+    #
+    # @return [void]
+    #
     def delete_reservation(reservation_ip, subnet_address, reservation_mac)
       to_delete = DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.new
       to_delete[:element_type] = DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpReservedIps

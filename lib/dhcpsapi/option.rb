@@ -2,6 +2,25 @@ module DhcpsApi
   module Option
     include CommonMethods
 
+    # creates a new dhcp option.
+    #
+    # @example create a new multi-valued string option with default values
+    #
+    # api.create_option(201, 'test_option', 'test option comment', DhcpsApi::DHCP_OPTION_DATA_TYPE::DhcpStringDataOption, true, 'default value', 'another default value')
+    #
+    # @param option_id [Fixnum] Option id
+    # @param option_name [String] Option name
+    # @param option_comment [String] Option comment
+    # @param option_type [DhcpsApi::DHCP_OPTION_DATA_TYPE] Option type
+    # @param is_array [Boolean] Is the option single- or multi-valued
+    # @param vendor_name [String] Option vendor name, nil (default) for none
+    # @param default_values [] one or more default values
+    #
+    # @return [Hash]
+    #
+    # @see DHCP_OPTION DHCP_OPTION documentation for the list of available fields.
+    # @see DHCP_OPTION_DATA_TYPE DHCP_OPTION_DATA_TYPE documentation for the list of available option types.
+    #
     def create_option(option_id, option_name, option_comment, option_type, is_array, vendor_name = nil, *default_values)
       is_vendor = vendor_name.nil? ? 0 : DhcpsApi::DHCP_FLAGS_OPTION_IS_VENDOR
       option_info = DhcpsApi::DHCP_OPTION.new
@@ -22,6 +41,19 @@ module DhcpsApi
       option_info.as_ruby_struct
     end
 
+    # retrieves a dhcp option.
+    #
+    # @example retrieve a dhcp option
+    #
+    # api.get_option(201, nil)
+    #
+    # @param option_id [Fixnum] Option id
+    # @param vendor_name [String] Option vendor name, nil (default) for none
+    #
+    # @return [Hash]
+    #
+    # @see DHCP_OPTION DHCP_OPTION documentation for the list of available fields.
+    #
     def get_option(option_id, vendor_name = nil)
       is_vendor = vendor_name.nil? ? 0 : DhcpsApi::DHCP_FLAGS_OPTION_IS_VENDOR
       option_info_ptr_ptr = FFI::MemoryPointer.new(:pointer)
@@ -46,6 +78,17 @@ module DhcpsApi
       to_return
     end
 
+    # deletes a dhcp option.
+    #
+    # @example delete a dhcp option
+    #
+    # api.delete_option(201, nil)
+    #
+    # @param option_id [Fixnum] Option id
+    # @param vendor_name [String] Option vendor name, nil (default) for none
+    #
+    # @return [void]
+    #
     def delete_option(option_id, vendor_name = nil)
       error = DhcpsApi::Win2008::Option.DhcpRemoveOptionV5(to_wchar_string(server_ip_address),
                                            vendor_name.nil? ? 0 : DhcpsApi::DHCP_FLAGS_OPTION_IS_VENDOR,
@@ -55,6 +98,18 @@ module DhcpsApi
       raise DhcpsApi::Error.new("Error deleting option.", error) if error != 0
     end
 
+    # lists available dhcp options.
+    #
+    # @example list dhcp options
+    #
+    # api.list_options(nil)
+    #
+    # @param vendor_name [String] Option vendor name, nil (default) for none
+    #
+    # @return [Array<Hash>]
+    #
+    # @see DHCP_OPTION DHCP_OPTION documentation for the list of available fields.
+    #
     def list_options(class_name = nil, vendor_name = nil)
       items, _ = retrieve_items(:dhcp_enum_options_v5, class_name, vendor_name, 1024, 0)
       items
