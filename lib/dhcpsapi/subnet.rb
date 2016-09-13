@@ -2,15 +2,49 @@ module DhcpsApi
   module Subnet
     include CommonMethods
 
+    # Lists subnets.
+    #
+    # @example list available subnets
+    #
+    # api.list_subnets
+    #
+    # @return [Array<Hash>]
+    #
+    # @see DHCP_SUBNET_INFO DHCP_SUBNET_INFO documentation for the list of available fields.
     def list_subnets
       subnets = enum_subnets
       subnets.map {|subnet| dhcp_get_subnet_info(subnet)}
     end
 
+    # Retrieves subnet information.
+    #
+    # @example Retrieve a subnet
+    #
+    # api.get_subnet('192.168.42.0')
+    #
+    # @param subnet_address [String] Subnet ip address
+    #
+    # @return [Hash]
+    #
+    # @see DHCP_SUBNET_INFO DHCP_SUBNET_INFO documentation for the list of available fields.
     def get_subnet(subnet_address)
       dhcp_get_subnet_info(ip_to_uint32(subnet_address))
     end
 
+    # Creates a new subnet.
+    #
+    # @example create a subnet
+    #
+    # api.create_subnet('192.168.42.0', '255.255.255.0', 'test-subnet', 'test subnet comment')
+    #
+    # @param subnet_address [String] Subnet ip address
+    # @param subnet_mask [String] Subnet ip address mask
+    # @param subnet_name [String] Subnet name
+    # @param subnet_comment [String] Subnet comment
+    #
+    # @return [Hash]
+    #
+    # @see DHCP_SUBNET_INFO DHCP_SUBNET_INFO documentation for the list of available fields.
     def create_subnet(subnet_address, subnet_mask, subnet_name, subnet_comment)
       subnet_info = DhcpsApi::DHCP_SUBNET_INFO.new
       subnet_info[:subnet_address] = ip_to_uint32(subnet_address)
@@ -24,11 +58,31 @@ module DhcpsApi
       subnet_info.as_ruby_struct
     end
 
+    # Deletes subnet.
+    #
+    # @example Delete a subnet
+    #
+    # api.delete_subnet('192.168.42.0')
+    #
+    # @return [void]
     def delete_subnet(subnet_address, force_flag = DhcpsApi::DHCP_FORCE_FLAG::DhcpNoForce)
       error = DhcpsApi::Win2008::Subnet.DhcpDeleteSubnet(to_wchar_string(server_ip_address), ip_to_uint32(subnet_address), force_flag)
       raise DhcpsApi::Error.new("Error deleting subnet.", error) if error != 0
     end
 
+    # Creates a new subnet ip address range.
+    #
+    # @example create a subnet ip address range
+    #
+    # api.create_subnet_ip_range('192.168.42.0', '192.168.42.100', '192.168.42.150')
+    #
+    # @param subnet_address [String] Subnet ip address
+    # @param start_address [String] Range start ip address
+    # @param end_address [String] Range end ip address
+    #
+    # @return [Hash]
+    #
+    # @see DHCP_SUBNET_ELEMENT_DATA_V4 DHCP_SUBNET_ELEMENT_DATA_V4 documentation for the list of available fields.
     def add_subnet_ip_range(subnet_address, start_address, end_address)
       subnet_element = DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.new
       subnet_element[:element_type] = DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpIpRanges
@@ -42,6 +96,17 @@ module DhcpsApi
       subnet_element.as_ruby_struct
     end
 
+    # Deletes a subnet ip address range.
+    #
+    # @example delete a subnet ip address range
+    #
+    # api.delete_subnet_ip_range('192.168.42.0', '192.168.42.100', '192.168.42.150')
+    #
+    # @param subnet_address [String] Subnet ip address
+    # @param start_address [String] Range start ip address
+    # @param end_address [String] Range end ip address
+    #
+    # @return [void]
     def delete_subnet_ip_range(subnet_address, start_address, end_address)
       to_delete = DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.new
       to_delete[:element_type] = DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpIpRanges
@@ -57,12 +122,14 @@ module DhcpsApi
       raise DhcpsApi::Error.new("Error deleting reservation.", error) if error != 0
     end
 
+    private
+
     def enum_subnets
       items, _ = retrieve_items(:dhcp_enum_subnets, 1024, 0)
       items
     end
 
-    # expects subnet_address is DHCP_IP_ADDRESS
+    # expected subnet_address is DHCP_IP_ADDRESS
     def dhcp_get_subnet_info(subnet_address)
       subnet_info_ptr_ptr = FFI::MemoryPointer.new(:pointer)
 
