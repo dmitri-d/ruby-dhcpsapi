@@ -4,7 +4,7 @@ require 'dhcpsapi'
 class MiscTest < Test::Unit::TestCase
   def setup
     @subnet_1 = "192.168.242.0"
-    @api = DhcpsApi::Server.new('127.0.0.1')
+    @api = new_server
     @api.create_subnet(@subnet_1, '255.255.255.0', 'subnet one', 'subnet one comment')
     @api.add_subnet_ip_range(@subnet_1, '192.168.242.10', '192.168.242.20')
   end

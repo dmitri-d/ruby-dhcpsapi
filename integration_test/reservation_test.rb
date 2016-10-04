@@ -5,7 +5,7 @@ class ReservationTest < Test::Unit::TestCase
   def setup
     @subnet_1 = "192.168.242.0"
     @subnet_2 = "192.168.243.0"
-    @api = DhcpsApi::Server.new('127.0.0.1')
+    @api = new_server
   end
 
   def test_create_list_delete_reservations
