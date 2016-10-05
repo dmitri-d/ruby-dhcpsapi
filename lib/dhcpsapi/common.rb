@@ -1,3 +1,5 @@
+require 'set'
+
 module DhcpsApi
   # @private
   module RubyStructAttrHelpers
