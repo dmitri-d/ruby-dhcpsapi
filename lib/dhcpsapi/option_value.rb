@@ -365,7 +365,7 @@ module DhcpsApi
                                             is_vendor,
                                             option_id,
                                             nil,
-                                            vendor_name.nil? ? nil : FFI::MemoryPointer.from_string(to_wchar_string(vendor_name)),
+                                            vendor_name.nil? ? nil : to_wchar_string(vendor_name),
                                             scope_info.pointer,
                                             option_data.pointer)
       raise DhcpsApi::Error.new("Error setting option value.", error) if error != 0
@@ -379,8 +379,8 @@ module DhcpsApi
                                             is_vendor,
                                             option_id,
                                             nil,
-                                            vendor_name.nil? ? nil : FFI::MemoryPointer.from_string(to_wchar_string(vendor_name)),
-                                            scope_info,
+                                            vendor_name.nil? ? nil : to_wchar_string(vendor_name),
+                                            scope_info.pointer,
                                             option_value_ptr_ptr)
 
       if is_error?(error)
@@ -404,8 +404,8 @@ module DhcpsApi
                                                is_vendor,
                                                option_id,
                                                nil,
-                                               vendor_name.nil? ? nil : FFI::MemoryPointer.from_string(to_wchar_string(vendor_name)),
-                                               scope_info)
+                                               vendor_name.nil? ? nil : to_wchar_string(vendor_name),
+                                               scope_info.pointer)
 
       raise DhcpsApi::Error.new("Error deleting option value.", error) if error != 0
     end
@@ -420,7 +420,7 @@ module DhcpsApi
       error = DhcpsApi::Win2008::OptionValue.DhcpEnumOptionValuesV5(to_wchar_string(server_ip_address),
                                               is_vendor,
                                               nil,
-                                              vendor_name.nil? ? nil : FFI::MemoryPointer.from_string(to_wchar_string(vendor_name)),
+                                              vendor_name.nil? ? nil : to_wchar_string(vendor_name),
                                               scope_info.pointer,
                                               resume_handle_ptr,
                                               preferred_maximum,

@@ -40,7 +40,7 @@ module DhcpsApi::Win2008
     _Out_ LPDHCP_CLIENT_INFO_V4       *ClientInfo
   );
 =end
-    attach_function :DhcpGetClientInfoV4, [:pointer, DhcpsApi::DHCP_SEARCH_INFO.by_value, :pointer], :uint32
+    attach_function :DhcpGetClientInfoV4, [:pointer, :pointer, :pointer], :uint32
 
 
 =begin

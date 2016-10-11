@@ -31,7 +31,7 @@ module DhcpsApi::Win2008
     _Out_ LPDHCP_OPTION_VALUE               *OptionValue
   );
 =end
-    attach_function :DhcpGetOptionValueV5, [:pointer, :uint32, :uint32, :pointer, :pointer, DhcpsApi::DHCP_OPTION_SCOPE_INFO.by_value, :pointer], :uint32
+    attach_function :DhcpGetOptionValueV5, [:pointer, :uint32, :uint32, :pointer, :pointer, :pointer, :pointer], :uint32
 
 =begin
   DWORD DhcpRemoveOptionValueV5(
@@ -43,7 +43,7 @@ module DhcpsApi::Win2008
     _In_ DHCP_CONST DHCP_OPTION_SCOPE_INFO ScopeInfo
   );
 =end
-   attach_function :DhcpRemoveOptionValueV5, [:pointer, :uint32, :uint32, :pointer, :pointer,  DhcpsApi::DHCP_OPTION_SCOPE_INFO.by_value], :uint32
+   attach_function :DhcpRemoveOptionValueV5, [:pointer, :uint32, :uint32, :pointer, :pointer,  :pointer], :uint32
 
 =begin
   DWORD DhcpSetOptionValueV5(
