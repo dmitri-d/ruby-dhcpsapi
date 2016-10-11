@@ -11,7 +11,7 @@ Install ruby-dhcpsapi gem from [Rubygems](https://rubygems.org/gems/dhcpsapi):
 ## Usage
 
 ```ruby
-require 'dhcsapi'
+require 'dhcpsapi'
 
 api = DhcpsApi::Server.new('127.0.0.1')
 
