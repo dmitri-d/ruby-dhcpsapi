@@ -30,19 +30,21 @@ module DhcpsApi
     # @param reservation_mac [String] Reservation mac address
     # @param reservation_name [String] Reservation name
     # @param reservation_comment [String] Reservation comment
+    # @param client_type [String] Client type
     #
     # @return [Hash]
     #
     # @see DHCP_IP_RESERVATION_INFO DHCP_IP_RESERVATION_INFO documentation for the list of available fields.
+    # @see ClientType ClientType documentation for the list of available client types.
     #
-    def create_reservation(reservation_ip, reservation_subnet_mask, reservation_mac, reservation_name, reservation_comment = '')
+    def create_reservation(reservation_ip, reservation_subnet_mask, reservation_mac, reservation_name, reservation_comment = '', client_type = DhcpsApi::ClientType::CLIENT_TYPE_DHCP)
       subnet_element = DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.new
       subnet_element[:element_type] = DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpReservedIps
       subnet_element[:element][:reserved_ip] = (reserved_ip = DhcpsApi::DHCP_IP_RESERVATION_V4.new).pointer
 
       reserved_ip[:reserved_ip_address] = ip_to_uint32(reservation_ip)
       reserved_ip[:reserved_for_client] = DhcpsApi::DHCP_CLIENT_UID.from_mac_address(reservation_mac).pointer
-      reserved_ip[:b_allowed_client_types] = DhcpsApi::ClientType::CLIENT_TYPE_NONE
+      reserved_ip[:b_allowed_client_types] = client_type
 
       ip_as_octets = reservation_ip.split('.').map {|octet| octet.to_i}
       mask_as_octets = reservation_subnet_mask.split('.').map {|octet| octet.to_i}
@@ -51,7 +53,7 @@ module DhcpsApi
       error = DhcpsApi::Win2008::SubnetElement.DhcpAddSubnetElementV4(to_wchar_string(server_ip_address), ip_to_uint32(subnet_address), subnet_element.pointer)
       raise DhcpsApi::Error.new("Error creating reservation.", error) if error != 0
 
-      modify_client(reservation_ip, reservation_subnet_mask, reservation_mac, reservation_name, reservation_comment, 0, DhcpsApi::ClientType::CLIENT_TYPE_NONE)
+      modify_client(reservation_ip, reservation_subnet_mask, reservation_mac, reservation_name, reservation_comment, 0, client_type)
 
       subnet_element.as_ruby_struct
     end
