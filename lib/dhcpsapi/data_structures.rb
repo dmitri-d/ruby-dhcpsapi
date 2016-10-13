@@ -558,7 +558,7 @@ typedef struct _DHCP_OPTION_ARRAY {
       subnet_element[:element_type] = DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpReservedIps
       subnet_element[:element][:reserved_ip] = (reserved_ip = DhcpsApi::DHCP_IP_RESERVATION_V4.new).pointer
 
-      reserved_ip[:reserved_ip_address] = ip_to_uint32(reservation_ip)
+      reserved_ip[:reserved_ip_address] = reserved_ip.ip_to_uint32(reservation_ip)
       reserved_ip[:reserved_for_client] = DhcpsApi::DHCP_CLIENT_UID.from_mac_address(reservation_mac).pointer
       reserved_ip[:b_allowed_client_types] = client_type
 
@@ -569,8 +569,8 @@ typedef struct _DHCP_OPTION_ARRAY {
       subnet_element = DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.new
       subnet_element[:element_type] = DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpIpRanges
       subnet_element[:element][:ip_range] = (ip_range = DhcpsApi::DHCP_IP_RANGE.new).pointer
-      ip_range[:start_address] = ip_to_uint32(start_ip_address)
-      ip_range[:end_address] = ip_to_uint32(end_ip_address)
+      ip_range[:start_address] = ip_range.ip_to_uint32(start_ip_address)
+      ip_range[:end_address] = ip_range.ip_to_uint32(end_ip_address)
 
       subnet_element
     end
