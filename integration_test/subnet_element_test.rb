@@ -26,7 +26,7 @@ class SubnetElementTest < Test::Unit::TestCase
     assert_equal Set.new(['00:F2:A8:C0:01:00:01:02:03:04:01', '00:F2:A8:C0:01:00:01:02:03:04:02',
                           '00:F2:A8:C0:01:00:01:02:03:04:03', '00:F2:A8:C0:01:00:01:02:03:04:04',
                           '00:F2:A8:C0:01:00:01:02:03:04:05', '00:F2:A8:C0:01:00:01:02:03:04:06']),
-                 Set.new(reservations.map {|r| r[:element][:reserved_for_client]})
+                 Set.new(reservations.map {|r| r[:element][:reserved_for_client][:data]})
 
     ranges = @api.list_subnet_elements(@subnet1, DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpIpRanges)
     assert_equal Set.new([{:start_address => '192.168.242.10', :end_address => '192.168.242.19'}]), Set.new(ranges)
