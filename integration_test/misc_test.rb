@@ -6,7 +6,7 @@ class MiscTest < Test::Unit::TestCase
     @subnet_1 = "192.168.242.0"
     @api = new_server
     @api.create_subnet(@subnet_1, '255.255.255.0', 'subnet one', 'subnet one comment')
-    @api.add_subnet_ip_range(@subnet_1, '192.168.242.10', '192.168.242.20')
+    @api.create_subnet_ip_range(@subnet_1, '192.168.242.10', '192.168.242.20')
   end
 
   def teardown

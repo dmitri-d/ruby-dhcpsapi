@@ -45,7 +45,7 @@ module DhcpsApi
       subnet_element = create_reservation_subnet_element(subnet_address, reservation_ip, reservation_mac, client_type)
       modify_client(reservation_ip, reservation_subnet_mask, reservation_mac, reservation_name, reservation_comment, 0, client_type)
 
-      subnet_element.as_ruby_struct
+      subnet_element
     end
 
     # Deletes subnet reservations.
