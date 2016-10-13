@@ -1,8 +1,8 @@
 module DhcpsApi
   class Server
-    DHCPS_WIN2008_API = Object,new
-    DHCPS_WIN2012_API = Object,new
-    DHCPS_NONE = Object,new
+    DHCPS_WIN2008_API = Object.new
+    DHCPS_WIN2012_API = Object.new
+    DHCPS_NONE = Object.new
 
     include RubyStructAttrHelpers
     include CommonMethods
@@ -14,6 +14,7 @@ module DhcpsApi
     include OptionValue
     include Reservation
     include Subnet
+    include SubnetElement
 
     attr_reader :server_ip_address
 
@@ -32,6 +33,7 @@ module DhcpsApi
       require 'dhcpsapi/win2008/option_value'
       require 'dhcpsapi/win2008/subnet_element'
       require 'dhcpsapi/win2008/subnet'
+      require 'dhcpsapi/win2008/subnet_element'
 
       level = :win2008
 

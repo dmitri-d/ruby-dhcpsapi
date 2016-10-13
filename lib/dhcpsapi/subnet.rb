@@ -83,17 +83,8 @@ module DhcpsApi
     # @return [Hash]
     #
     # @see DHCP_SUBNET_ELEMENT_DATA_V4 DHCP_SUBNET_ELEMENT_DATA_V4 documentation for the list of available fields.
-    def add_subnet_ip_range(subnet_address, start_address, end_address)
-      subnet_element = DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.new
-      subnet_element[:element_type] = DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpIpRanges
-      subnet_element[:element][:ip_range] = (ip_range = DhcpsApi::DHCP_IP_RANGE.new).pointer
-      ip_range[:start_address] = ip_to_uint32(start_address)
-      ip_range[:end_address] = ip_to_uint32(end_address)
-
-      error = DhcpsApi::Win2008::SubnetElement.DhcpAddSubnetElementV4(to_wchar_string(server_ip_address), ip_to_uint32(subnet_address), subnet_element.pointer)
-      raise DhcpsApi::Error.new("Error adding a subnet range to '%s'." % [subnet_address], error) if error != 0
-
-      subnet_element.as_ruby_struct
+    def create_subnet_ip_range(subnet_address, start_address, end_address)
+      add_subnet_element(subnet_address, DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.build_for_subnet_range(start_address, end_address))
     end
 
     # Deletes a subnet ip address range.
@@ -108,18 +99,7 @@ module DhcpsApi
     #
     # @return [void]
     def delete_subnet_ip_range(subnet_address, start_address, end_address)
-      to_delete = DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.new
-      to_delete[:element_type] = DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpIpRanges
-      to_delete[:element][:ip_range] = (ip_range = DhcpsApi::DHCP_IP_RANGE.new).pointer
-      ip_range[:start_address] = ip_to_uint32(start_address)
-      ip_range[:end_address] = ip_to_uint32(end_address)
-
-      error = DhcpsApi::Win2008::SubnetElement.DhcpRemoveSubnetElementV4(
-          to_wchar_string(server_ip_address),
-          ip_to_uint32(subnet_address),
-          to_delete.pointer,
-          DhcpsApi::DHCP_FORCE_FLAG::DhcpNoForce)
-      raise DhcpsApi::Error.new("Error deleting reservation.", error) if error != 0
+      delete_subnet_element(subnet_address, DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.build_for_subnet_range(start_address, end_address))
     end
 
     private
