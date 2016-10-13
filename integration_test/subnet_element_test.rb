@@ -29,7 +29,7 @@ class SubnetElementTest < Test::Unit::TestCase
                  Set.new(reservations.map {|r| r[:element][:reserved_for_client][:data]})
 
     ranges = @api.list_subnet_elements(@subnet1, DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpIpRanges)
-    assert_equal Set.new([{:start_address => '192.168.242.10', :end_address => '192.168.242.19'}]), Set.new(ranges)
+    assert_equal [{:element_type => 0, :element => {:start_address => '192.168.242.10', :end_address => '192.168.242.19'}}], ranges
 
     @api.delete_subnet_element(@subnet1, DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.build_for_reservation('192.168.242.100', '00:01:02:03:04:01', DhcpsApi::ClientType::CLIENT_TYPE_DHCP))
     @api.delete_subnet_element(@subnet1, DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.build_for_reservation('192.168.242.101', '00:01:02:03:04:02', DhcpsApi::ClientType::CLIENT_TYPE_DHCP))
