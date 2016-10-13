@@ -33,7 +33,7 @@ module DhcpsApi
     #
     def add_subnet_element(subnet_address, subnet_element)
       error = DhcpsApi::Win2008::SubnetElement.DhcpAddSubnetElementV4(to_wchar_string(server_ip_address), ip_to_uint32(subnet_address), subnet_element.pointer)
-      raise DhcpsApi::Error.new("Error creating reservation.", error) if error != 0
+      raise DhcpsApi::Error.new("Error creating subnet element.", error) if error != 0
       subnet_element.as_ruby_struct
     end
 
@@ -54,7 +54,7 @@ module DhcpsApi
           ip_to_uint32(subnet_address),
           subnet_element.pointer,
           DhcpsApi::DHCP_FORCE_FLAG::DhcpNoForce)
-      raise DhcpsApi::Error.new("Error deleting reservation.", error) if error != 0
+      raise DhcpsApi::Error.new("Error deleting subnet element.", error) if error != 0
     end
 
     def dhcp_enum_subnet_elements_v4(subnet_address, element_type, preferred_maximum, resume_handle)
