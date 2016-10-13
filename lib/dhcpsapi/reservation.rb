@@ -38,21 +38,11 @@ module DhcpsApi
     # @see ClientType ClientType documentation for the list of available client types.
     #
     def create_reservation(reservation_ip, reservation_subnet_mask, reservation_mac, reservation_name, reservation_comment = '', client_type = DhcpsApi::ClientType::CLIENT_TYPE_DHCP)
-      subnet_element = DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.new
-      subnet_element[:element_type] = DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpReservedIps
-      subnet_element[:element][:reserved_ip] = (reserved_ip = DhcpsApi::DHCP_IP_RESERVATION_V4.new).pointer
-
-      reserved_ip[:reserved_ip_address] = ip_to_uint32(reservation_ip)
-      reserved_ip[:reserved_for_client] = DhcpsApi::DHCP_CLIENT_UID.from_mac_address(reservation_mac).pointer
-      reserved_ip[:b_allowed_client_types] = client_type
-
       ip_as_octets = reservation_ip.split('.').map {|octet| octet.to_i}
       mask_as_octets = reservation_subnet_mask.split('.').map {|octet| octet.to_i}
       subnet_address = (0..3).inject([]) {|all, i| all << (ip_as_octets[i] & mask_as_octets[i])}.join('.')
 
-      error = DhcpsApi::Win2008::SubnetElement.DhcpAddSubnetElementV4(to_wchar_string(server_ip_address), ip_to_uint32(subnet_address), subnet_element.pointer)
-      raise DhcpsApi::Error.new("Error creating reservation.", error) if error != 0
-
+      subnet_element = create_reservation_subnet_element(subnet_address, reservation_ip, reservation_mac, client_type)
       modify_client(reservation_ip, reservation_subnet_mask, reservation_mac, reservation_name, reservation_comment, 0, client_type)
 
       subnet_element.as_ruby_struct
@@ -70,21 +60,9 @@ module DhcpsApi
     #
     # @return [void]
     #
-    def delete_reservation(reservation_ip, subnet_address, reservation_mac)
-      to_delete = DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.new
-      to_delete[:element_type] = DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpReservedIps
-      to_delete[:element][:reserved_ip] = (reserved_ip = DhcpsApi::DHCP_IP_RESERVATION_V4.new).pointer
-
-      reserved_ip[:reserved_ip_address] = ip_to_uint32(reservation_ip)
-      reserved_ip[:reserved_for_client] = DhcpsApi::DHCP_CLIENT_UID.from_mac_address(reservation_mac).pointer
-      reserved_ip[:b_allowed_client_types] = DhcpsApi::ClientType::CLIENT_TYPE_NONE
-
-      error = DhcpsApi::Win2008::SubnetElement.DhcpRemoveSubnetElementV4(
-          to_wchar_string(server_ip_address),
-          ip_to_uint32(subnet_address),
-          to_delete.pointer,
-          DhcpsApi::DHCP_FORCE_FLAG::DhcpNoForce)
-      raise DhcpsApi::Error.new("Error deleting reservation.", error) if error != 0
+    def delete_reservation(reservation_ip, subnet_address, reservation_mac, client_type = DhcpsApi::ClientType::CLIENT_TYPE_DHCP)
+      delete_subnet_element(subnet_address, DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.build_for_reservation(
+          reservation_ip, reservation_mac, client_type))
     end
 
     # Sets dns configuration for a reservation.
@@ -113,6 +91,13 @@ module DhcpsApi
       value = value | 0x40 if disable_ddns_updates_for_ptr
 
       set_reserved_option_value(81, reservation_ip, subnet_address, DhcpsApi::DHCP_OPTION_DATA_TYPE::DhcpDWordOption, [value])
+    end
+
+    def create_reservation_subnet_element(subnet_address, reservation_ip_address, reservation_mac_address, client_type = DhcpsApi::ClientType::CLIENT_TYPE_DHCP)
+      add_subnet_element(subnet_address,
+                         DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.build_for_reservation(
+                             reservation_ip_address, reservation_mac_address, client_type)
+      )
     end
 
     def dhcp_v4_enum_subnet_reservations(subnet_address, preferred_maximum, resume_handle)

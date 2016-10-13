@@ -522,6 +522,11 @@ typedef struct _DHCP_OPTION_ARRAY {
     layout :reserved_ip_address, :uint32,
            :reserved_for_client, :pointer,
            :b_allowed_client_types, :uint8 # see ClientType
+
+    ruby_struct_attr :uint32_to_ip, :reserved_ip_address
+    def reserved_for_client_as_ruby_struct_attr
+      DHCP_CLIENT_UID.new(self[:reserved_for_client]).as_ruby_struct
+    end
   end
 
 =begin
@@ -547,6 +552,69 @@ typedef struct _DHCP_OPTION_ARRAY {
   class DHCP_SUBNET_ELEMENT_DATA_V4 < DHCPS_Struct
     layout :element_type, :uint32,
            :element, DHCP_SUBNET_ELEMENT
+
+    def self.build_for_reservation(reservation_ip, reservation_mac, client_type = DhcpsApi::ClientType::CLIENT_TYPE_DHCP)
+      subnet_element = DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.new
+      subnet_element[:element_type] = DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpReservedIps
+      subnet_element[:element][:reserved_ip] = (reserved_ip = DhcpsApi::DHCP_IP_RESERVATION_V4.new).pointer
+
+      reserved_ip[:reserved_ip_address] = ip_to_uint32(reservation_ip)
+      reserved_ip[:reserved_for_client] = DhcpsApi::DHCP_CLIENT_UID.from_mac_address(reservation_mac).pointer
+      reserved_ip[:b_allowed_client_types] = client_type
+
+      subnet_element
+    end
+
+    def self.build_for_subnet_range(start_ip_address, end_ip_address)
+      subnet_element = DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.new
+      subnet_element[:element_type] = DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpIpRanges
+      subnet_element[:element][:ip_range] = (ip_range = DhcpsApi::DHCP_IP_RANGE.new).pointer
+      ip_range[:start_address] = ip_to_uint32(start_ip_address)
+      ip_range[:end_address] = ip_to_uint32(end_ip_address)
+
+      subnet_element
+    end
+
+    def element_as_ruby_struct_attr
+      case self[:element_type]
+        when DHCP_SUBNET_ELEMENT_TYPE::DhcpIpRanges
+          DHCP_IP_RANGE.new(self[:element][:ip_range]).as_ruby_struct
+        when DHCP_SUBNET_ELEMENT_TYPE::DhcpSecondaryHosts
+          DHCP_HOST_INFO.new(self[:element][:secondary_host]).as_ruby_struct
+        when DHCP_SUBNET_ELEMENT_TYPE::DhcpReservedIps
+          DHCP_IP_RESERVATION_V4.new(self[:element][:reserved_ip]).as_ruby_struct
+        when DHCP_SUBNET_ELEMENT_TYPE::DhcpExcludedIpRanges
+          DHCP_IP_RANGE.new(self[:element][:exclude_ip_range]).as_ruby_struct
+        else
+          self[:element]
+      end
+    end
+  end
+
+=begin
+  typedef struct _DHCP_SUBNET_ELEMENT_INFO_ARRAY_V4 {
+    DWORD                         NumElements;
+    LPDHCP_SUBNET_ELEMENT_DATA_V4 Elements;
+  } DHCP_SUBNET_ELEMENT_INFO_ARRAY_V4, *LPDHCP_SUBNET_ELEMENT_INFO_ARRAY_V4;
+=end
+  #
+  # DHCP_SUBNET_ELEMENT_INFO_ARRAY_V4 defines a list of DHCP subnet elements.
+  #
+  # Available fields:
+  # :bum_elements [Fixnum], The number of option values in the list
+  # :values [Array<DHCP_SUBNET_ELEMENT_DATA_V4>], Array of subnet elements
+  #
+  # @see https://msdn.microsoft.com/en-us/library/windows/desktop/ee460931(v=vs.85).aspx
+  #
+  class DHCP_SUBNET_ELEMENT_INFO_ARRAY_V4 < DHCPS_Struct
+    layout :num_elements, :uint32,
+           :values, :pointer
+
+    def as_ruby_struct
+      0.upto(self[:num_elements]-1).inject([]) do |all, offset|
+        all << DhcpsApi::DHCP_SUBNET_ELEMENT_DATA_V4.new(self[:values] + offset*DHCP_SUBNET_ELEMENT_DATA_V4.size).as_ruby_struct
+      end
+    end
   end
 
 =begin
@@ -581,7 +649,7 @@ typedef struct _DHCP_OPTION_ARRAY {
     layout :start_address, :uint32,
            :end_address, :uint32
 
-    ruby_struct_attr :uint32_to_ip, :subnet_address, :subnet_mask
+    ruby_struct_attr :uint32_to_ip, :start_address, :end_address
   end
 
 #
