@@ -22,7 +22,6 @@ module DhcpsApi::Win2008
   );
 =end
     attach_function :DhcpRemoveSubnetElementV4, [:pointer, :uint32, :pointer, :uint32], :uint32
-  end
 
 =begin
 DWORD DHCP_API_FUNCTION DhcpEnumSubnetElementsV4(
@@ -36,5 +35,7 @@ DWORD DHCP_API_FUNCTION DhcpEnumSubnetElementsV4(
   _Out_   DWORD                               *ElementsTotal
 );
 =end
-  attach_function :DhcpEnumSubnetElementsV4, [:pointer, :uint32, :uint32, :pointer, :uint32, :pointer, :pointer, :pointer], :uint32
+    attach_function :DhcpEnumSubnetElementsV4, [:pointer, :uint32, :uint32, :pointer, :uint32, :pointer, :pointer, :pointer], :uint32
+  end
 end
+

@@ -1,8 +1,8 @@
 module DhcpsApi
   class Server
-    DHCPS_WIN2008_API = Object,new
-    DHCPS_WIN2012_API = Object,new
-    DHCPS_NONE = Object,new
+    DHCPS_WIN2008_API = Object.new
+    DHCPS_WIN2012_API = Object.new
+    DHCPS_NONE = Object.new
 
     include RubyStructAttrHelpers
     include CommonMethods
