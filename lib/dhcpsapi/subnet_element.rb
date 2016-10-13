@@ -14,7 +14,7 @@ module DhcpsApi
     # @see DHCP_SUBNET_ELEMENT_DATA_V4 DHCP_SUBNET_ELEMENT_DATA_V4 documentation for the list of available fields.
     #
     def list_subnet_elements(subnet_address, element_type)
-      items, _ = retrieve_items(:dhcp_enum_subnet_clients_v4, subnet_address, element_type, 1024, 0)
+      items, _ = retrieve_items(:dhcp_enum_subnet_elements_v4, subnet_address, element_type, 1024, 0)
       items
     end
 
