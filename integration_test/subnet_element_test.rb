@@ -22,7 +22,10 @@ class SubnetElementTest < Test::Unit::TestCase
     reservations = @api.list_subnet_elements(@subnet1, DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpReservedIps)
     assert_equal Set.new(['192.168.242.100', '192.168.242.101', '192.168.242.102', '192.168.242.103', '192.168.242.104', '192.168.242.105']),
                  Set.new(reservations.map {|r| r[:element][:reserved_ip_address]})
-    assert_equal Set.new(['00:01:02:03:04:01', '00:01:02:03:04:02', '00:01:02:03:04:03', '00:01:02:03:04:04', '00:01:02:03:04:05', '00:01:02:03:04:06', ]),
+    # mac addresses come back prefixed with subnet ip
+    assert_equal Set.new(['00:F2:A8:C0:01:00:01:02:03:04:01', '00:F2:A8:C0:01:00:01:02:03:04:02',
+                          '00:F2:A8:C0:01:00:01:02:03:04:03', '00:F2:A8:C0:01:00:01:02:03:04:04',
+                          '00:F2:A8:C0:01:00:01:02:03:04:05', '00:F2:A8:C0:01:00:01:02:03:04:06']),
                  Set.new(reservations.map {|r| r[:element][:reserved_for_client]})
 
     ranges = @api.list_subnet_elements(@subnet1, DhcpsApi::DHCP_SUBNET_ELEMENT_TYPE::DhcpIpRanges)
