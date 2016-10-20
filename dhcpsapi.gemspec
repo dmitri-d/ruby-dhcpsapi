@@ -7,8 +7,8 @@ Gem::Specification.new do |gem|
   gem.email                 = 'dmitri@appliedlogic.ca'
   gem.description           = 'Ruby wrappers for MS DHCP api'
   gem.summary               = 'Ruby wrappers for MS DHCP api'
-  gem.homepage              = "https://github.com/witlessbird/ruby-dhcpsapi_win2008"
-  gem.license               = "Apache License, v2.0"
+  gem.homepage              = "https://github.com/witlessbird/ruby-dhcpsapi"
+  gem.license               = "Apache-2.0"
 
   gem.files                 = %w(LICENSE.txt README.md Rakefile) + Dir["lib/**/*"]
   gem.name                  = "dhcpsapi"
