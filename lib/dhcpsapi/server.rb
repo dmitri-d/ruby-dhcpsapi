@@ -43,8 +43,12 @@ module DhcpsApi
       require 'dhcpsapi/win2012/reservation'
 
       API_LEVEL = DHCPS_WIN2012_API
-    rescue Exception => e
+    rescue Exception => _
       API_LEVEL = level == :win2008 ? DHCPS_WIN2008_API : DHCPS_NONE
     end
+  end
+
+  def api_level
+    API_LEVEL
   end
 end
