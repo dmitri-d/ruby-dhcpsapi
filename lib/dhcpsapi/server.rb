@@ -46,9 +46,9 @@ module DhcpsApi
     rescue Exception => _
       API_LEVEL = level == :win2008 ? DHCPS_WIN2008_API : DHCPS_NONE
     end
-  end
 
-  def api_level
-    API_LEVEL
+    def api_level
+      API_LEVEL
+    end
   end
 end
